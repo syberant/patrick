@@ -20,7 +20,7 @@
 
         defaultApp = {
           type = "app";
-          program = "${r-and-d-discord-bot}/bin/r-and-d-discord-bot";
+          program = "${r-and-d-discord-bot}/bin/r_and_d_discord_bot";
         };
         apps.r-and-d-discord-bot = defaultApp;
       });
