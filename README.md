@@ -11,7 +11,7 @@ First make sure you have installed:
 - pip
 
 To build and install the package to a local folder named build run:
-```bash
+```
 $ cd /home/sybrand/Documents/Radboud_Universiteit_1/r-and-d-discord-bot
 $ # Your directory will be in a different place, navigate to it with cd
 $ pip install . -t build
@@ -50,7 +50,7 @@ Installing collected packages: multidict, idna, yarl, typing-extensions, chardet
 Successfully installed aiohttp-3.7.4.post0 async-timeout-3.0.1 attrs-20.3.0 chardet-4.0.0 discord.py-1.7.1 idna-3.1 multidict-5.1.0 r-and-d-discord-bot-0.0.0 typing-extensions-3.7.4.3 yarl-1.6.3
 ```
 For subsequent builds you can use the following:
-```bash
+```
 $ pip install . -t build --no-deps -U
 Processing /home/sybrand/Documents/Radboud_Universiteit_1/r-and-d-discord-bot
   Installing build dependencies: started
@@ -81,7 +81,8 @@ First make sure you have installed a version of Nix with flakes enabled, then us
 - `nix build` to build
 - `./result/bin/r_and_d_discord_bot` to execute the built program
 - `nix run` to compile and run the program
-Take note however that you first run `git add -A` for new files, otherwise the flake doesn't see them.
+
+Take note however that you must first run `git add -A` if there are any new files, otherwise the flake doesn't see them.
 
 ## License
 Coming soon...
