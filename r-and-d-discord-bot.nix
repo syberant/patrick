@@ -2,7 +2,7 @@
 
 python3Packages.buildPythonApplication {
   pname = "r-and-d-discord-bot";
-  version = "0.0.1";
+  version = "0.0.0";
 
   doCheck = false;
 

@@ -3,17 +3,14 @@
 
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
-    flake-compat = {
-      url = "github:edolstra/flake-compat";
-      flake = false;
-    };
+    nixpkgs.url = "github:NixOS/nixpkgs";
   };
 
   outputs = { self, nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        r-and-d-discord-bot = pkgs.callPackage ./r-and-d-discord-bot.nix {};
+        r-and-d-discord-bot = pkgs.callPackage ./r-and-d-discord-bot.nix { };
       in rec {
         defaultPackage = r-and-d-discord-bot;
         packages.r-and-d-discord-bot = r-and-d-discord-bot;
