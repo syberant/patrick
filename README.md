@@ -35,5 +35,8 @@ First make sure you have installed a version of Nix with flakes enabled, then us
 
 Take note however that you must first run `git add -A` if there are any new files, otherwise the flake doesn't see them.
 
+## Authors
+- Nathalie
+
 ## License
 Coming soon...
