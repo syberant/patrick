@@ -37,6 +37,7 @@ Take note however that you must first run `git add -A` if there are any new file
 
 ## Authors
 - Nathalie
+- Splinter
 
 ## License
 Coming soon...
