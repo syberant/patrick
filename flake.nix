@@ -10,6 +10,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        pythonPackages = pkgs.python3Packages;
         r-and-d-discord-bot = pkgs.callPackage ./r-and-d-discord-bot.nix { };
       in rec {
         defaultPackage = r-and-d-discord-bot;
@@ -20,5 +21,13 @@
           program = "${r-and-d-discord-bot}/bin/r_and_d_discord_bot";
         };
         apps.r-and-d-discord-bot = defaultApp;
+
+        apps.lint = {
+          type = "app";
+          program = let
+            lint = pkgs.writeScriptBin "lint"
+              "${pythonPackages.flake8}/bin/flake8 ./r_and_d_discord_bot";
+          in "${lint}/bin/lint";
+        };
       });
 }
