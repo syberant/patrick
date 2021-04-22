@@ -1,5 +1,5 @@
 #!/usr/bin/env python
 
-import r_and_d_discord_bot
+from r_and_d_discord_bot import main
 
 main()
