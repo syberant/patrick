@@ -40,4 +40,27 @@ def main():
     async def ping(ctx):
         await ctx.send('pong')
 
+    @bot.command()
+    async def create_channel(ctx, name):
+        channel = await ctx.guild.create_text_channel(name)
+        await ctx.send("Created channel " + channel.mention)
+
+    @bot.command()
+    async def clear_channel(ctx, name):
+        for c in ctx.guild.channels:
+            if (c.name == name):
+                await c.delete()
+
+    # Aid in testing, delete everything except the standard channels
+    # Should be either removed, disabled or polished and require an Admin role
+    # in final product
+    @bot.command()
+    async def clear_all_channels(ctx):
+        candidates = [c for c in ctx.guild.channels if c.name not in ["Text Channels", "Voice Channels", "General", "general"]]
+        descr = "Delete following channels?\n" + '\n'.join(map(lambda c: c.mention, candidates))
+        confirmed = await ask_confirmation(ctx, descr)
+        if (confirmed):
+            for c in candidates:
+                await c.delete()
+
     bot.run('ODM0NzU0MjM2NjIwMzQxMjY4.YIFfdg.cAu7OaLqawMf0S3KI_b_kcFPqlY')
