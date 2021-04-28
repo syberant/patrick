@@ -32,10 +32,10 @@ class Development(Cog):
     async def clear_all_channels(self, ctx):
         candidates = [c for c in ctx.guild.channels
                       if c.name not in [
-                            "Text Channels",
-                            "Voice Channels",
-                            "General",
-                            "general"]]
+                          "Text Channels",
+                          "Voice Channels",
+                          "General",
+                          "general"]]
         descr = "Delete following channels?\n" \
             + '\n'.join(map(lambda c: c.mention, candidates))
         confirmed = await ask_confirmation(ctx, descr)

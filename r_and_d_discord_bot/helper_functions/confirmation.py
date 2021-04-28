@@ -12,11 +12,11 @@ async def ask_confirmation(ctx, msg: str) -> bool:
 
     def check(reaction, user):
         return user == ctx.author and message == reaction.message and \
-                reaction.emoji in ["👍", "👎"]
+            reaction.emoji in ["👍", "👎"]
 
     try:
         reaction, user = await \
-                ctx.bot.wait_for("reaction_add", timeout=30, check=check)
+            ctx.bot.wait_for("reaction_add", timeout=30, check=check)
     except asyncio.TimeoutError:
         embed.title = "Timed out"
         embed.colour = Colour.red()
