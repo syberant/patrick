@@ -39,7 +39,6 @@ Take note however that you must first run `git add -A` if there are any new file
 - Nathalie
 - Splinter
 - Mike
-- Sybrand
 
 ## License
 Coming soon...
