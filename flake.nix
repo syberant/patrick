@@ -11,7 +11,8 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         pythonPackages = pkgs.python3Packages;
-        r-and-d-discord-bot = pkgs.callPackage ./r-and-d-discord-bot.nix { };
+        r-and-d-discord-bot =
+          pythonPackages.callPackage ./r-and-d-discord-bot.nix { };
       in rec {
         defaultPackage = r-and-d-discord-bot;
         packages.r-and-d-discord-bot = r-and-d-discord-bot;
@@ -21,6 +22,15 @@
           program = "${r-and-d-discord-bot}/bin/r_and_d_discord_bot";
         };
         apps.r-and-d-discord-bot = defaultApp;
+
+        devShell = pkgs.mkShell {
+          buildInputs = (defaultPackage.propagatedBuildInputs or [ ])
+            ++ (with pythonPackages; [
+              python-language-server
+              autopep8
+              flake8
+            ]);
+        };
 
         apps.lint = {
           type = "app";
