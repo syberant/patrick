@@ -2,7 +2,8 @@ from discord.ext.commands import Cog, command
 from r_and_d_discord_bot.helper_functions import ask_confirmation
 
 
-# Aid in development and testing. Should be either removed, disabled or polished and require an Admin role in final product
+# Aid in development and testing. Should be either removed, disabled or
+# polished and require an Admin role in final product.
 class Development(Cog):
 
     def __init__(self, bot):
@@ -29,8 +30,14 @@ class Development(Cog):
 
     @command()
     async def clear_all_channels(self, ctx):
-        candidates = [c for c in ctx.guild.channels if c.name not in ["Text Channels", "Voice Channels", "General", "general"]]
-        descr = "Delete following channels?\n" + '\n'.join(map(lambda c: c.mention, candidates))
+        candidates = [c for c in ctx.guild.channels
+                      if c.name not in [
+                            "Text Channels",
+                            "Voice Channels",
+                            "General",
+                            "general"]]
+        descr = "Delete following channels?\n" \
+            + '\n'.join(map(lambda c: c.mention, candidates))
         confirmed = await ask_confirmation(ctx, descr)
         if (confirmed):
             for c in candidates:
