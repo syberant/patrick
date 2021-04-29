@@ -1,9 +1,12 @@
+import discord
 from discord.ext import commands
 from r_and_d_discord_bot.cogs import Development
 
 
 def main():
-    bot = commands.Bot(command_prefix='>')
+    intents = discord.Intents.default()
+    intents.members = True
+    bot = commands.Bot(command_prefix='>', intents=intents)
 
     bot.add_cog(Development(bot))
 
