@@ -38,7 +38,7 @@ class Development(Cog):
                           "general"]]
         descr = "Delete following channels?\n" \
             + '\n'.join(map(lambda c: c.mention, candidates))
-        confirmed = await ask_confirmation(ctx, descr)
-        if (confirmed):
+        confirmed = await ask_confirmation(ctx, descr, 30)
+        if confirmed:
             for c in candidates:
                 await c.delete()

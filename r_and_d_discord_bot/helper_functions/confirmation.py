@@ -2,7 +2,7 @@ from discord import Embed, Colour
 import asyncio
 
 
-async def ask_confirmation(ctx, msg: str) -> bool:
+async def ask_confirmation(ctx, msg: str, timeout: int) -> bool:
     """Asks the user for confirmation."""
 
     embed = Embed(title="Confirmation", description=msg)
@@ -16,7 +16,7 @@ async def ask_confirmation(ctx, msg: str) -> bool:
 
     try:
         reaction, user = await \
-            ctx.bot.wait_for("reaction_add", timeout=30, check=check)
+            ctx.bot.wait_for("reaction_add", timeout=timeout, check=check)
     except asyncio.TimeoutError:
         embed.title = "Timed out"
         embed.colour = Colour.red()
