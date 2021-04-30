@@ -36,3 +36,5 @@ async def ask_confirmation(ctx, msg: str, timeout: int) -> bool:
             await message.edit(embed=embed)
             await message.clear_reactions()
             return True
+
+    raise Exception("This code should be unreachable")
