@@ -1,12 +1,11 @@
 from discord.ext.commands import Cog, command, has_permissions
-from discord import Guild, Role, Member, PermissionOverwrite, CategoryChannel
+from discord import Guild, Member, PermissionOverwrite, CategoryChannel
 from typing import Optional
-
-
-def getTArole(guild: Guild) -> Role:
-    for r in guild.roles:
-        if r.name == "TA":
-            return r
+from r_and_d_discord_bot.helper_functions import (
+    get_ta_role_messaging,
+    create_text_channel,
+    create_voice_channel,
+)
 
 
 async def getTAstudentsrole(guild: Guild, ta: Member):
@@ -17,11 +16,12 @@ async def getTAstudentsrole(guild: Guild, ta: Member):
     return await guild.create_role(name=name)
 
 
-def get_category(guild: Guild, name: str) -> Optional[CategoryChannel]:
+async def get_or_create_category(guild: Guild, name: str, overwrites) \
+        -> Optional[CategoryChannel]:
     for c in guild.categories:
         if c.name == name:
             return c
-    return None
+    return await guild.create_category(name, overwrites=overwrites)
 
 
 class Groups(Cog):
@@ -32,9 +32,9 @@ class Groups(Cog):
     @command()
     @has_permissions(manage_channels=True)
     async def createTACategories(self, ctx):
-        role = getTArole(ctx.guild)
-        created = []
-        preexisting = []
+        role = await get_ta_role_messaging(ctx)
+        if not role:
+            return
 
         for ta in role.members:
             category_name = "TA " + ta.name
@@ -47,18 +47,7 @@ class Groups(Cog):
             }
 
             # Don't create duplicate categories
-            if get_category(ctx.guild, category_name) is None:
-                category = await ctx.guild.create_category(
-                    category_name,
-                    overwrites=overwrites)
-                await ctx.guild.create_text_channel("tekst", category=category)
-                await ctx.guild.create_voice_channel("spraak",
-                                                     category=category)
-                created.append(ta)
-            else:
-                preexisting.append(ta)
-
-        await ctx.send("Created categories for these TAs: "
-                       + ' '.join([ta.mention for ta in created]))
-        await ctx.send("These TAs already had categories: "
-                       + ' '.join([ta.mention for ta in preexisting]))
+            category = await get_or_create_category(ctx.guild, category_name,
+                                                    overwrites)
+            await create_text_channel(ctx, "tekst", category=category)
+            await create_voice_channel(ctx, "spraak", category=category)
