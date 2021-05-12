@@ -1,25 +1,27 @@
-from discord import PermissionOverwrite, TextChannel
-from typing import List, Dict, Optional
+from discord import PermissionOverwrite
+from typing import List, Dict
 from discord.ext.commands import Cog, command, Context
-from r_and_d_discord_bot.helper_functions import get_ta_role_messaging
+from r_and_d_discord_bot.helper_functions import (
+    get_ta_role_messaging,
+    create_text_channel,
+)
 import logging
 
 
 class StandardChannels(Cog):
-
     def __init__(self, bot):
         self.bot = bot
 
-    # TODO: misschien bericht sturen om kanaal uit te leggen?
     @command()
     async def standard_channels(self, ctx: Context) -> None:
-        if ctx is None:
+        if ctx.guild is None:
             # Early exit, since this function crucially depends on the
             # ctx.guild not being None.
             return
 
         announcements_overwrites = {
-            ctx.guild.default_role: PermissionOverwrite(send_messages=False)}
+            ctx.guild.default_role: PermissionOverwrite(send_messages=False)
+        }
 
         ta_role = await get_ta_role_messaging(ctx)
         if ta_role:
@@ -29,20 +31,25 @@ class StandardChannels(Cog):
             logging.warning("Could not find TA role.")
 
         channels: List[Dict[str, object]] = [
-            {"name": "students-for-students",
-                "topic": "Ask questions to other students here"},
+            {
+                "name": "students-for-students",
+                "topic": "Ask questions to other students here",
+            },
             {"name": "questions", "topic": "Ask questions to TAs here"},
             {"name": "looking-for-a-partner", "topic": "Find a partner here"},
-            {"name": "announcements", "topic": "Important announcements",
-                "overwrites": announcements_overwrites}
+            {
+                "name": "announcements",
+                "topic": "Important announcements",
+                "overwrites": announcements_overwrites,
+            },
         ]
 
         mentions = []
         for channel in channels:
-            chan = await self.create_text_channel(
+            chan = await create_text_channel(
                 ctx,
-                channel["name"],
-                topic=channel.get("topic"),
+                str(channel["name"]),
+                topic=channel.get("topic"),  # type: ignore
                 overwrites=channel.get("overwrites"),
             )
             if chan:
@@ -54,25 +61,3 @@ class StandardChannels(Cog):
             await ctx.send("Created channels:\n" + "\n".join(mentions))
 
         return None
-
-    async def create_text_channel(
-            self,
-            ctx: Context,
-            name: str,
-            topic: str = None,
-            overwrites=None) -> Optional[TextChannel]:
-        """
-        Create a text channel with the given parameters if no text channel with
-        the given name exists.
-        """
-
-        if ctx.guild:
-            for channel in ctx.guild.channels:
-                if channel.name == name:
-                    return None
-
-            return await ctx.guild.create_text_channel(
-                name,
-                topic=topic,
-                overwrites=overwrites,
-            )
