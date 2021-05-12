@@ -1,6 +1,7 @@
-from discord import PermissionOverwrite, Role, TextChannel
-from typing import Optional
+from discord import PermissionOverwrite, TextChannel
+from typing import List, Dict, Optional
 from discord.ext.commands import Cog, command, Context
+from r_and_d_discord_bot.helper_functions import get_ta_role_messaging
 import logging
 
 
@@ -12,17 +13,22 @@ class StandardChannels(Cog):
     # TODO: misschien bericht sturen om kanaal uit te leggen?
     @command()
     async def standard_channels(self, ctx: Context) -> None:
+        if ctx is None:
+            # Early exit, since this function crucially depends on the
+            # ctx.guild not being None.
+            return
+
         announcements_overwrites = {
             ctx.guild.default_role: PermissionOverwrite(send_messages=False)}
 
-        ta_role = self.get_ta_role(ctx)
+        ta_role = await get_ta_role_messaging(ctx)
         if ta_role:
             announcements_overwrites[ta_role] = PermissionOverwrite(
                 send_messages=True)
         else:
             logging.warning("Could not find TA role.")
 
-        channels = [
+        channels: List[Dict[str, object]] = [
             {"name": "students-for-students",
                 "topic": "Ask questions to other students here"},
             {"name": "questions", "topic": "Ask questions to TAs here"},
@@ -47,6 +53,8 @@ class StandardChannels(Cog):
         else:
             await ctx.send("Created channels:\n" + "\n".join(mentions))
 
+        return None
+
     async def create_text_channel(
             self,
             ctx: Context,
@@ -68,11 +76,3 @@ class StandardChannels(Cog):
                 topic=topic,
                 overwrites=overwrites,
             )
-
-    # TODO: op een of andere manier standaardiseren.
-    def get_ta_role(self, ctx: Context) -> Optional[Role]:
-        for role in ctx.guild.roles:
-            if role.name == "TA":
-                return role
-
-        return None
