@@ -9,7 +9,7 @@ from r_and_d_discord_bot.helper_functions import (
 
 
 async def get_ta_studentsrole(guild: Guild, ta: Member):
-    name = "Students " + ta.nick.get(ta.name)
+    name = "Students " + ta.nick or ta.name
     for r in guild.roles:
         if r.name == name:
             return r
