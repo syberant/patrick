@@ -1,5 +1,5 @@
 from discord.ext.commands import Cog, command, has_permissions
-from discord import Guild, Member, PermissionOverwrite, CategoryChannel
+from discord import Embed, Guild, Member, PermissionOverwrite, CategoryChannel
 from typing import Optional
 from r_and_d_discord_bot.helper_functions import (
     get_ta_role_messaging,
@@ -36,6 +36,8 @@ class Groups(Cog):
         if not role:
             return
 
+        added = {}
+
         for ta in role.members:
             category_name = "TA " + ta.name
             students = await getTAstudentsrole(ctx.guild, ta)
@@ -49,5 +51,18 @@ class Groups(Cog):
             # Don't create duplicate categories
             category = await get_or_create_category(ctx.guild, category_name,
                                                     overwrites)
-            await create_text_channel(ctx, "tekst", category=category)
-            await create_voice_channel(ctx, "spraak", category=category)
+            added[category] = []
+            res = await create_text_channel(ctx, "tekst", category=category)
+            if res:
+                added[category].append(res)
+            res = await create_voice_channel(ctx, "spraak", category=category)
+            if res:
+                added[category].append(res)
+
+        embed = Embed(
+            title="Created TA categories",
+            description="These are the channels that were added per TA:")
+        for category, channels in added.items():
+            embed.add_field(name=category.name, value='\n'.join(
+                [c.mention for c in channels]) or "None")
+        await ctx.send(embed=embed)
