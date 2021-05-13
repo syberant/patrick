@@ -43,4 +43,4 @@ async def ask_confirmation(ctx, msg: str, timeout: int = 30) -> bool:
     """Asks the user for confirmation, requires description."""
 
     embed = Embed(title="Confirmation", description=msg)
-    await ask_confirmation(ctx, embed, timeout)
+    return await ask_confirmation_embed(ctx, embed, timeout)
