@@ -2,10 +2,9 @@ from discord import Embed, Colour
 import asyncio
 
 
-async def ask_confirmation(ctx, msg: str, timeout: int) -> bool:
-    """Asks the user for confirmation."""
+async def ask_confirmation_embed(ctx, embed: Embed, timeout: int = 30) -> bool:
+    """Asks the user for confirmation, requires embed."""
 
-    embed = Embed(title="Confirmation", description=msg)
     message = await ctx.send(embed=embed)
     await message.add_reaction("👍")
     await message.add_reaction("👎")
@@ -38,3 +37,10 @@ async def ask_confirmation(ctx, msg: str, timeout: int) -> bool:
             return True
 
     raise Exception("This code should be unreachable")
+
+
+async def ask_confirmation(ctx, msg: str, timeout: int = 30) -> bool:
+    """Asks the user for confirmation, requires description."""
+
+    embed = Embed(title="Confirmation", description=msg)
+    await ask_confirmation(ctx, embed, timeout)
