@@ -8,8 +8,8 @@ from r_and_d_discord_bot.helper_functions import (
 )
 
 
-async def getTAstudentsrole(guild: Guild, ta: Member):
-    name = "Students " + ta.name
+async def get_ta_studentsrole(guild: Guild, ta: Member):
+    name = "Students " + ta.nick.get(ta.name)
     for r in guild.roles:
         if r.name == name:
             return r
@@ -31,7 +31,7 @@ class Groups(Cog):
 
     @command()
     @has_permissions(manage_channels=True)
-    async def createTACategories(self, ctx):
+    async def create_ta_categories(self, ctx):
         role = await get_ta_role_messaging(ctx)
         if not role:
             return
@@ -40,7 +40,7 @@ class Groups(Cog):
 
         for ta in role.members:
             category_name = "TA " + ta.name
-            students = await getTAstudentsrole(ctx.guild, ta)
+            students = await get_ta_studentsrole(ctx.guild, ta)
             overwrites = {
                 ctx.guild.default_role:
                     PermissionOverwrite(view_channel=False),
