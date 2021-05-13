@@ -32,12 +32,21 @@
             ]);
         };
 
-        apps.lint = {
-          type = "app";
-          program = let
-            lint = pkgs.writeScriptBin "lint"
-              "${pythonPackages.flake8}/bin/flake8 ./r_and_d_discord_bot";
-          in "${lint}/bin/lint";
+        apps = {
+          lint = {
+            type = "app";
+            program = "" + pkgs.writeScript "lint" ''
+                ${pythonPackages.flake8}/bin/flake8 ./r_and_d_discord_bot
+              '';
+          };
+
+          test = {
+            type = "app";
+            program = "" + pkgs.writeScript "test" ''
+                # TODO: add stubs
+                ${pythonPackages.mypy}/bin/mypy --namespace-packages ./r_and_d_discord_bot
+              '';
+          };
         };
       });
 }
