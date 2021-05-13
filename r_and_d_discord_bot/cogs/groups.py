@@ -1,7 +1,7 @@
 from discord.ext.commands import Cog, command, has_permissions
 from discord import (Embed, Guild, Member, Role, PermissionOverwrite,
                      CategoryChannel)
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from r_and_d_discord_bot.helper_functions import (
     get_ta_role_messaging,
     create_text_channel,
@@ -70,7 +70,7 @@ class Groups(Cog):
                 [c.mention for c in channels]) or "None")
         await ctx.send(embed=embed)
 
-    def place_student(self, roles: [Tuple[int, Role]]) -> Role:
+    def place_student(self, roles: List[Tuple[int, Role]]) -> Role:
         # Find the ta with the fewest members
         (i, (a, r)) = min(enumerate(roles), key=lambda x: x[1])
 
