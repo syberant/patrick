@@ -47,7 +47,6 @@
               ${pythonPackages.mypy}/bin/mypy --namespace-packages ./r_and_d_discord_bot --python-executable ${
                 pkgs.python3.withPackages (ps: with ps; [ discord-stubs ])
               }/bin/python3
-
             '';
           };
         };
