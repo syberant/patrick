@@ -13,6 +13,7 @@
         pythonPackages = pkgs.python3Packages;
         r-and-d-discord-bot =
           pythonPackages.callPackage ./r-and-d-discord-bot.nix { };
+        discord-stubs = pythonPackages.callPackage ./discord-py-stubs.nix { };
       in rec {
         defaultPackage = r-and-d-discord-bot;
         packages.r-and-d-discord-bot = r-and-d-discord-bot;
@@ -36,16 +37,18 @@
           lint = {
             type = "app";
             program = "" + pkgs.writeScript "lint" ''
-                ${pythonPackages.flake8}/bin/flake8 ./r_and_d_discord_bot
-              '';
+              ${pythonPackages.flake8}/bin/flake8 ./r_and_d_discord_bot
+            '';
           };
 
           test = {
             type = "app";
             program = "" + pkgs.writeScript "test" ''
-                # TODO: add stubs
-                ${pythonPackages.mypy}/bin/mypy --namespace-packages ./r_and_d_discord_bot
-              '';
+              ${pythonPackages.mypy}/bin/mypy --namespace-packages ./r_and_d_discord_bot --python-executable ${
+                pkgs.python3.withPackages (ps: with ps; [ discord-stubs ])
+              }/bin/python3
+
+            '';
           };
         };
       });
