@@ -10,10 +10,15 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        pythonPackages = pkgs.python3Packages;
-        r-and-d-discord-bot =
-          pythonPackages.callPackage ./r-and-d-discord-bot.nix { };
-        discord-stubs = pythonPackages.callPackage ./discord-py-stubs.nix { };
+        pythonPackages = pkgs.python3Packages.override {
+          overrides = final: prev: {
+            discord-stubs = final.callPackage ./discord-py-stubs.nix { };
+            markdownify = final.callPackage ./markdownify.nix { };
+          };
+        };
+        r-and-d-discord-bot = pkgs.callPackage ./r-and-d-discord-bot.nix {
+          python3Packages = pythonPackages;
+        };
       in rec {
         defaultPackage = r-and-d-discord-bot;
         packages.r-and-d-discord-bot = r-and-d-discord-bot;
@@ -45,7 +50,9 @@
             type = "app";
             program = "" + pkgs.writeScript "test" ''
               ${pythonPackages.mypy}/bin/mypy --namespace-packages ./r_and_d_discord_bot --python-executable ${
-                pkgs.python3.withPackages (ps: with ps; [ discord-stubs ])
+              # TODO: this is ugly
+                pythonPackages.python.withPackages
+                (ps: with ps; [ pythonPackages.discord-stubs ])
               }/bin/python3
             '';
           };
