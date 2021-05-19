@@ -10,8 +10,9 @@ from r_and_d_discord_bot.helper_functions import (
 )
 
 
-# NOTE: will create a new role if TAs change their nickname
-async def get_ta_studentsrole(guild: Guild, ta: Member):
+async def get_ta_students_role(guild: Guild, ta: Member):
+    """ NOTE: will create a new role if TAs change their nickname """
+
     name = "Students " + (ta.nick or ta.name)
     for r in guild.roles:
         if r.name == name:
@@ -43,7 +44,7 @@ class Groups(Cog):
 
         for ta in role.members:
             category_name = "TA " + (ta.nick or ta.name)
-            students = await get_ta_studentsrole(ctx.guild, ta)
+            students = await get_ta_students_role(ctx.guild, ta)
             overwrites = {
                 ctx.guild.default_role:
                     PermissionOverwrite(view_channel=False),
@@ -96,14 +97,14 @@ class Groups(Cog):
             return True
 
         students = [s for s in ctx.guild.members if to_be_placed(s, ta)]
-        tmp = [await get_ta_studentsrole(ctx.guild, t)
-               for t in ctx.guild.members if ta in t.roles]
-        roles = [(len(r.members), r) for r in tmp]
+        roles = [await get_ta_students_role(ctx.guild, t)
+                 for t in ctx.guild.members if ta in t.roles]
+        member_counted_roles = [(len(r.members), r) for r in roles]
 
-        distribution = {r: [] for r in tmp}
+        distribution = {r: [] for r in roles}
 
         for s in students:
-            r = self.place_student(roles)
+            r = self.place_student(member_counted_roles)
             distribution[r].append(s)
 
         embed = Embed(
@@ -124,7 +125,7 @@ class Groups(Cog):
         ta = await get_ta_role_messaging(ctx)
         assert ta
 
-        student_roles = [await get_ta_studentsrole(ctx.guild, t)
+        student_roles = [await get_ta_students_role(ctx.guild, t)
                          for t in ctx.guild.members if ta in t.roles]
         distribution = {r: r.members for r in student_roles}
 
