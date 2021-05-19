@@ -22,7 +22,11 @@ def main():
         if isinstance(ctx.channel, TextChannel):
             if ctx.channel.name == "admin":
                 return True
+            await ctx.send("This channel can not be used for commands," +
+                           " please use #admin.")
             raise OnlyAdminCommands("Command sent in non-admin channel")
+        await ctx.send("This channel cannot be used for commands, as it is" +
+                       " not part of a server.")
         raise OnlyAdminCommands("Command not sent in text channel of server," +
                                 " so not in admin channel")
 
