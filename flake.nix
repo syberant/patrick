@@ -57,5 +57,20 @@
             '';
           };
         };
-      });
+      }) // {
+        packages.x86_64-linux.docker =
+          let pkgs = nixpkgs.legacyPackages.x86_64-linux;
+          in pkgs.dockerTools.buildImage {
+            name = "patrick";
+            fromImage = pkgs.dockerTools.pullImage {
+              imageName = "alpine";
+              imageDigest =
+                "sha256:69e70a79f2d41ab5d637de98c1e0b055206ba40a8145e7bddb55ccc04e13cf8f";
+              sha256 = "CWjvHtsusvx79z9+lo+UMLS1nHX3q21c0R2Ch1eBsjw=";
+              finalImageTag = "3.13.5";
+              finalImageName = "alpine";
+            };
+            config = { Cmd = [ "${self.defaultPackage.x86_64-linux}/bin/patrick" ]; };
+          };
+      };
 }
