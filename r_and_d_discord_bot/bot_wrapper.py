@@ -1,6 +1,7 @@
+from datetime import datetime
+from discord import Guild, Member, Role, TextChannel
 from discord.ext.commands import Bot, Cog
-from discord import Guild, Member, Role
-from typing import Optional, Dict
+from typing import cast, Optional, Dict
 import logging
 import pickle
 
@@ -24,6 +25,57 @@ async def get_ta_students_role(guild: Guild, ta: Member) -> Role:
     return await guild.create_role(name=name)
 
 
+class AnnouncementsDataBinary:
+    url: str
+    d2l_session_val: str
+    d2l_secure_session_val: str
+    last_updated: Optional[datetime]
+    channel: int  # TextChannel.id
+
+    def __init__(self, announcements_data):  # announcements_data: AnnouncementsData
+        self.url = announcements_data.url
+        self.d2l_session_val = announcements_data.d2l_session_val
+        self.d2l_secure_session_val = announcements_data.d2l_secure_session_val
+        self.last_updated = announcements_data.last_updated
+        self.channel = announcements_data.channel.id
+
+
+class AnnouncementsData:
+    # URL of Announcements page
+    url: str
+    d2l_session_val: str
+    d2l_secure_session_val: str
+    # Last time announcements were fetched
+    last_updated: Optional[datetime]
+    # Announcements channel
+    channel: TextChannel
+
+    def __init__(
+            self,
+            url: str,
+            d2l_session_val: str,
+            d2l_secure_session_val: str,
+            last_updated: Optional[datetime],
+            channel: TextChannel
+    ):
+        self.url = url
+        self.d2l_session_val = d2l_session_val
+        self.d2l_secure_session_val = d2l_secure_session_val
+        self.last_updated = last_updated
+        self.channel = channel
+
+    @staticmethod
+    def from_bin(announcements_data_bin: AnnouncementsDataBinary, guild: Guild):
+        url = announcements_data_bin.url
+        d2l_session_val = announcements_data_bin.d2l_session_val
+        d2l_secure_session_val = announcements_data_bin.d2l_secure_session_val
+        last_updated = announcements_data_bin.last_updated
+        channel = guild.get_channel(announcements_data_bin.channel)
+        assert channel
+        channel = cast(TextChannel, channel)
+        return AnnouncementsData(url, d2l_session_val, d2l_secure_session_val, last_updated, channel)
+
+
 class GuildDataBinary:
     """
     A class that stores a serialisable copy of GuildData.
@@ -31,6 +83,7 @@ class GuildDataBinary:
 
     ta_role: int  # Role.id
     student_roles: Dict[int, int]  # Dict[Member.id, Role.id]
+    announcements_data: Optional[AnnouncementsDataBinary]
 
     def __init__(self, guild_data):
         self.ta_role = guild_data.ta_role.id
@@ -38,17 +91,22 @@ class GuildDataBinary:
             ta.id: student_role.id
             for ta, student_role in guild_data.student_roles.items()
         }
+        self.announcements_data = None
+        if guild_data.announcements_data:
+            self.announcements_data = AnnouncementsDataBinary(guild_data.announcements_data)
 
 
 class GuildData:
     guild: Guild
     ta_role: Optional[Role]
     student_roles: Dict[Member, Role]
+    announcements_data: Optional[AnnouncementsData]
 
     def __init__(self, guild_data_bin: Optional[GuildDataBinary], guild: Guild):
         self.guild = guild
         self.ta_role = None
         self.student_roles = {}
+        self.announcements_data = None
 
         if guild_data_bin:
             ta_role = guild.get_role(guild_data_bin.ta_role)
@@ -64,6 +122,9 @@ class GuildData:
                         student_roles[member] = role
 
             self.student_roles = student_roles
+
+            if guild_data_bin.announcements_data:
+                self.announcements_data = AnnouncementsData.from_bin(guild_data_bin.announcements_data, guild)
 
     def get_ta_role(self, guild: Guild) -> Optional[Role]:
         return self.ta_role

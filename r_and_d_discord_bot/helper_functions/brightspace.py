@@ -1,7 +1,8 @@
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup  # type:ignore
 from datetime import datetime
-from markdownify import markdownify
-from typing import List, Tuple
+from markdownify import markdownify  # type:ignore
+from typing import List, Tuple, Optional
+import requests
 
 # The date time format used by Brightspace.
 DATE_TIME_FORMAT = "%b %d, %Y %H:%M"
@@ -22,14 +23,14 @@ def parse_brightspace_announcements(
     """
     soup = BeautifulSoup(html, "html.parser")
 
-    rows = soup.body.find(id="z_c").find_all("tr")
+    rows = soup.body.find("table", class_="d2l-table").find_all("tr")
     counter = 0
     title = None
     date = None
     announcements = []
     for row in rows:
         # Skip table header
-        if "d2l-table-row-first" not in row.get("class", []):
+        if "d_gh" not in row.get("class", []):
             if counter % 2 == 0:
                 title = row.strong.string
                 date = datetime.strptime(row.label.string, DATE_TIME_FORMAT)
@@ -42,7 +43,48 @@ def parse_brightspace_announcements(
                 announcements += [(title, date, message)]
             counter += 1
 
+    # Reverse announcements, since they are sorted on the page from new to old, but we normally want
+    # to send them from old to new.
+    announcements.reverse()
+
     if since:
         return [ann for ann in announcements if ann[1] > since]
 
     return announcements
+
+
+def download_brightspace_announcements(
+        url: str,
+        d2l_session_val: str,
+        d2l_secure_session_val: str,
+) -> requests.Response:
+    """
+    Download the Brightspace announcements page. The url must be the url of the
+    announcements page, which can be found by clicking the ‘Announcements’ link
+    on a Brightspace course page. The d2l_session_val and
+    d2l_secure_session_val cookies can be found in your browser’s request
+    headers.
+    """
+    headers = {"Cookie": f"d2lSessionVal={d2l_session_val}; " +
+               f"d2lSecureSessionVal={d2l_secure_session_val}"}
+    return requests.get(url, headers=headers)
+
+
+def get_brightspace_announcements(
+        url: str,
+        d2l_session_val: str,
+        d2l_secure_session_val: str,
+        since: datetime = None,
+) -> Optional[List[Tuple[str, datetime, str]]]:
+    """
+    Download the Brightspace announcements and parse them. See
+    parse_brightspace_announcements and download_brightspace_announcements for
+    more information about the parameters.
+    """
+    req = download_brightspace_announcements(
+        url, d2l_session_val, d2l_secure_session_val)
+
+    if req.status_code == requests.codes.ok:
+        return parse_brightspace_announcements(req.text, since=since)
+
+    return None
