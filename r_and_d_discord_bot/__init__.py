@@ -2,6 +2,7 @@ import discord
 from discord import TextChannel
 from discord.ext.commands import Bot, Context, CheckFailure
 from r_and_d_discord_bot.cogs import Development, Groups, StandardChannels
+from r_and_d_discord_bot.bot_wrapper import BotWrapper
 
 
 class OnlyAdminCommands(CheckFailure):
@@ -11,7 +12,7 @@ class OnlyAdminCommands(CheckFailure):
 def main():
     intents = discord.Intents.default()
     intents.members = True
-    bot = Bot(command_prefix='>', intents=intents)
+    bot = BotWrapper(command_prefix='>', intents=intents)
 
     bot.add_cog(Development(bot))
     bot.add_cog(Groups(bot))

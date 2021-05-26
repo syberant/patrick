@@ -1,15 +1,13 @@
 from discord import PermissionOverwrite
 from typing import List, Dict
 from discord.ext.commands import Cog, command, Context
-from r_and_d_discord_bot.helper_functions import (
-    get_ta_role_messaging,
-    create_text_channel,
-)
+from r_and_d_discord_bot.bot_wrapper import BotWrapper
+from r_and_d_discord_bot.helper_functions import create_text_channel
 import logging
 
 
 class StandardChannels(Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: BotWrapper):
         self.bot = bot
 
     @command()
@@ -23,7 +21,7 @@ class StandardChannels(Cog):
             ctx.guild.default_role: PermissionOverwrite(send_messages=False)
         }
 
-        ta_role = await get_ta_role_messaging(ctx)
+        ta_role = self.bot.guild_data[ctx.guild].ta
         if ta_role:
             announcements_overwrites[ta_role] = PermissionOverwrite(
                 send_messages=True)
