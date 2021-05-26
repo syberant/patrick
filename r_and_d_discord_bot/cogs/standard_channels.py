@@ -27,6 +27,10 @@ class StandardChannels(Cog):
         if ta_role:
             announcements_overwrites[ta_role] = PermissionOverwrite(
                 send_messages=True)
+            bot_user = self.bot.user
+            assert bot_user is not None
+            announcements_overwrites[bot_user] = PermissionOverwrite(
+                send_messages=True)
         else:
             logging.warning("Could not find TA role.")
 
@@ -54,6 +58,8 @@ class StandardChannels(Cog):
             )
             if chan:
                 mentions += [chan.mention]
+                if channel["name"] == "announcements":
+                    await chan.send("test")
 
         if len(mentions) == 0:
             await ctx.send("The standard channels already exist!")
