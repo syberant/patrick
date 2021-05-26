@@ -8,7 +8,12 @@ python3Packages.buildPythonApplication {
 
   src = ./.;
 
-  propagatedBuildInputs = with python3Packages; [ discordpy beautifulsoup4 markdownify ];
+  propagatedBuildInputs = with python3Packages; [
+    discordpy
+    beautifulsoup4
+    markdownify
+    requests
+  ];
 
   meta = with lib; {
     homepage = "https://github.com/syberant/r-and-d-discord-bot";

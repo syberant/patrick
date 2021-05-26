@@ -2,7 +2,7 @@ import discord
 from discord import TextChannel
 from discord.ext.commands import Context, CheckFailure, CommandError
 from r_and_d_discord_bot.bot_wrapper import BotWrapper
-from r_and_d_discord_bot.cogs import Development, Groups, StandardChannels
+from r_and_d_discord_bot.cogs import Development, Groups, StandardChannels, Announcements
 import argparse
 import os
 import logging
@@ -28,6 +28,7 @@ def main():
     bot.add_cog(Development(bot))
     bot.add_cog(Groups(bot))
     bot.add_cog(StandardChannels(bot))
+    bot.add_cog(Announcements(bot))
 
     @bot.check
     async def admin_channel(ctx: Context) -> bool:
