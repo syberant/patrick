@@ -5,7 +5,7 @@ from r_and_d_discord_bot.bot_wrapper import BotWrapper
 from r_and_d_discord_bot.helper_functions import create_text_channel
 import logging
 
-
+logger = logging.getLogger(__name__)
 PermissionUser = Union[ClientUser, Role]
 
 
@@ -33,7 +33,7 @@ class StandardChannels(Cog):
             announcements_overwrites[bot_user] = PermissionOverwrite(
                 send_messages=True)
         else:
-            logging.warning("Could not find TA role.")
+            logger.warning("Could not find TA role.")
 
         channels: List[Dict[str, object]] = [
             {

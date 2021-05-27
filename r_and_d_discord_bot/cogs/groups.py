@@ -20,6 +20,8 @@ from r_and_d_discord_bot.helper_functions import (
     ask_confirmation_embed,
 )
 
+logger = logging.getLogger(__name__)
+
 
 async def get_or_create_category(
     guild: Guild, name: str, overwrites
@@ -240,7 +242,7 @@ class Groups(Cog):
             try:
                 await message.add_reaction(e)
             except discord.HTTPException:
-                logging.warning(
+                logger.warning(
                     f"Error trying to use emoji: {str(e)} with name {e.name}"
                 )
                 pass

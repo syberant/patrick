@@ -3,6 +3,8 @@ from discord import Guild, Member, Role
 from typing import Optional, Dict, Any
 import logging
 
+logger = logging.getLogger(__name__)
+
 
 def get_ta_role(guild: Guild) -> Optional[Role]:
     for role in guild.roles:
@@ -12,7 +14,7 @@ def get_ta_role(guild: Guild) -> Optional[Role]:
 
 
 async def get_ta_students_role(guild: Guild, ta: Member):
-    """ NOTE: will create a new role if TAs change their nickname """
+    """NOTE: will create a new role if TAs change their nickname."""
 
     name = "Students " + (ta.nick or ta.name)
     for r in guild.roles:
@@ -39,7 +41,7 @@ class BotWrapper(Bot):
     async def init_guild(self, guild: Guild):
         ta = get_ta_role(guild)
         if not ta:
-            logging.error(f"Could not find TA role for server {guild.name}.")
+            logger.error(f"Could not find TA role for server {guild.name}.")
 
             owner = guild.owner
             if owner:
@@ -49,7 +51,7 @@ class BotWrapper(Bot):
                       This is required for most operations."
                 )
             else:
-                logging.critical(
+                logger.critical(
                     "Could not find owner of server without TA role."
                 )
             return
