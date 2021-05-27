@@ -2,8 +2,16 @@ import logging
 import random
 import discord
 from discord.ext.commands import Cog, Context, command, has_permissions
-from discord import (Embed, Guild, Member, Role, PermissionOverwrite,
-                     CategoryChannel, TextChannel, PartialEmoji)
+from discord import (
+    Embed,
+    Guild,
+    Member,
+    Role,
+    PermissionOverwrite,
+    CategoryChannel,
+    TextChannel,
+    PartialEmoji,
+)
 from typing import Optional, Tuple, List, Dict
 from r_and_d_discord_bot.bot_wrapper import BotWrapper
 from r_and_d_discord_bot.helper_functions import (
@@ -13,8 +21,9 @@ from r_and_d_discord_bot.helper_functions import (
 )
 
 
-async def get_or_create_category(guild: Guild, name: str, overwrites) \
-        -> CategoryChannel:
+async def get_or_create_category(
+    guild: Guild, name: str, overwrites
+) -> CategoryChannel:
     for c in guild.categories:
         if c.name == name:
             return c
@@ -40,27 +49,38 @@ EMOJIS = "🐶🐱🐭🐹🐰🦊🐻🐼🐻❄️🐨🐯🦁🐮🐷🐽🐸
 
 
 class Groups(Cog):
-
     def __init__(self, bot: BotWrapper):
         self.bot = bot
         self.emoji_ta_mapping: Optional[Dict[PartialEmoji, Role]] = None
         self.ta_emoji_mapping: Optional[Dict[Role, PartialEmoji]] = None
         self.message_id: Optional[int] = None
 
-    def placement_embed(self, guild_id: int, ta_emoji_mapping: Dict[Role, PartialEmoji]) -> Embed:
+    def placement_embed(
+        self, guild_id: int, ta_emoji_mapping: Dict[Role, PartialEmoji]
+    ) -> Embed:
         embed = Embed(
             title="Student roles",
-            description="Use the emojis below to place yourself with a TA. Please spread evenly over the TAs.")
+            description="Use the emojis below to place yourself with a TA. Please spread evenly over the TAs.",
+        )
 
         guild_data = self.bot.guild_data[guild_id]
         for t in guild_data.ta.members:
             name = t.nick or t.name
             role = guild_data.student_roles[t]
-            embed.add_field(name=name, value=f"{ta_emoji_mapping[role]} Currently {len(role.members)} student(s).")
+            embed.add_field(
+                name=name,
+                value=f"{ta_emoji_mapping[role]} Currently {len(role.members)} student(s).",
+            )
 
         return embed
 
-    async def update_placement_message(self, channel, message_id: int, guild_id: int, ta_emoji_mapping: Dict[Role, discord.PartialEmoji]):
+    async def update_placement_message(
+        self,
+        channel,
+        message_id: int,
+        guild_id: int,
+        ta_emoji_mapping: Dict[Role, discord.PartialEmoji],
+    ):
         embed = self.placement_embed(guild_id, ta_emoji_mapping)
         message = await channel.fetch_message(message_id)
         await message.edit(embed=embed)
@@ -81,29 +101,36 @@ class Groups(Cog):
             category_name = "TA " + (ta.nick or ta.name)
             students = guild_data.student_roles[ta]
             overwrites = {
-                ctx.guild.default_role:
-                    PermissionOverwrite(view_channel=False),
+                ctx.guild.default_role: PermissionOverwrite(
+                    view_channel=False
+                ),
                 ta: PermissionOverwrite(view_channel=True),
                 students: PermissionOverwrite(view_channel=True),
             }
 
             # Don't create duplicate categories
-            category = await get_or_create_category(ctx.guild, category_name,
-                                                    overwrites)
+            category = await get_or_create_category(
+                ctx.guild, category_name, overwrites
+            )
             added[category] = []
             text = await create_text_channel(ctx, "tekst", category=category)
             if text:
                 added[category].append(text)
-            voice = await create_voice_channel(ctx, "spraak", category=category)
+            voice = await create_voice_channel(
+                ctx, "spraak", category=category
+            )
             if voice:
                 added[category].append(voice)
 
         embed = Embed(
             title="Created TA categories",
-            description="These are the channels that were added per TA:")
+            description="These are the channels that were added per TA:",
+        )
         for category, channels in added.items():
-            embed.add_field(name=category.name, value='\n'.join(
-                [c.mention for c in channels]) or "None")
+            embed.add_field(
+                name=category.name,
+                value="\n".join([c.mention for c in channels]) or "None",
+            )
         await ctx.send(embed=embed)
 
     def place_student(self, roles: List[Tuple[int, Role]]) -> Role:
@@ -126,8 +153,11 @@ class Groups(Cog):
         ta = guild_data.ta
 
         students = [s for s in ctx.guild.members if is_unplaced_student(s, ta)]
-        roles = [guild_data.student_roles[t] for t in ctx.guild.members
-                 if ta in t.roles]
+        roles = [
+            guild_data.student_roles[t]
+            for t in ctx.guild.members
+            if ta in t.roles
+        ]
         member_counted_roles = [(len(r.members), r) for r in roles]
 
         distribution: Dict[Role, List[Member]] = {r: [] for r in roles}
@@ -139,10 +169,13 @@ class Groups(Cog):
         embed = Embed(
             title="Confirm placement?",
             description="This would be the distribution \
-                    of new students over the TAs:")
+                    of new students over the TAs:",
+        )
         for r, stud in distribution.items():
-            embed.add_field(name=r.name, value='\n'.join(
-                [s.mention for s in stud]) or "Nobody")
+            embed.add_field(
+                name=r.name,
+                value="\n".join([s.mention for s in stud]) or "Nobody",
+            )
 
         if await ask_confirmation_embed(ctx, embed):
             for r, stud in distribution.items():
@@ -157,20 +190,28 @@ class Groups(Cog):
         guild_data = self.bot.guild_data[ctx.guild.id]
         ta = guild_data.ta
 
-        student_roles = [guild_data.student_roles[t] for t in ctx.guild.members
-                         if ta in t.roles]
+        student_roles = [
+            guild_data.student_roles[t]
+            for t in ctx.guild.members
+            if ta in t.roles
+        ]
         distribution = {r: r.members for r in student_roles}
 
         embed = Embed(
             title="Overview of TA groups",
-            description="This is the distribution of students over the TAs:")
+            description="This is the distribution of students over the TAs:",
+        )
         for r, stud in distribution.items():
-            embed.add_field(name=r.name, value='\n'.join(
-                [s.mention for s in stud]) or "Nobody")
+            embed.add_field(
+                name=r.name,
+                value="\n".join([s.mention for s in stud]) or "Nobody",
+            )
         await ctx.send(embed=embed)
 
     @command()
-    async def post_self_placement_message(self, ctx: Context, target_channel: TextChannel):
+    async def post_self_placement_message(
+        self, ctx: Context, target_channel: TextChannel
+    ):
         if not ctx.guild:
             return
 
@@ -197,7 +238,9 @@ class Groups(Cog):
             try:
                 await message.add_reaction(e)
             except discord.HTTPException:
-                logging.warning(f"Error trying to use emoji: {str(e)} with name {e.name}")
+                logging.warning(
+                    f"Error trying to use emoji: {str(e)} with name {e.name}"
+                )
                 pass
 
         # TODO: use database
@@ -207,11 +250,17 @@ class Groups(Cog):
 
     # Docs: https://discordpy.readthedocs.io/en/latest/api.html#discord.on_raw_reaction_add
     @Cog.listener()
-    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+    async def on_raw_reaction_add(
+        self, payload: discord.RawReactionActionEvent
+    ):
         assert payload.member
 
         # Check if the placement message was sent
-        if not self.emoji_ta_mapping or not self.ta_emoji_mapping or not self.message_id:
+        if (
+            not self.emoji_ta_mapping
+            or not self.ta_emoji_mapping
+            or not self.message_id
+        ):
             return
 
         # Only count reactions to the right message
@@ -236,10 +285,17 @@ class Groups(Cog):
 
             guild = self.bot.get_guild(payload.guild_id)
             assert guild
-            await payload.member.send(f"Reaction received in server '{guild.name}', placing you in '{role.name}'")
+            await payload.member.send(
+                f"Reaction received in server '{guild.name}', placing you in '{role.name}'"
+            )
 
             # Update placement embed
-            await self.update_placement_message(channel, payload.message_id, payload.guild_id, self.ta_emoji_mapping)
+            await self.update_placement_message(
+                channel,
+                payload.message_id,
+                payload.guild_id,
+                self.ta_emoji_mapping,
+            )
         else:
             # Emoji does not correspond to a TA, removing to avoid confusion
             message = await channel.fetch_message(payload.message_id)
@@ -247,9 +303,15 @@ class Groups(Cog):
 
     # TODO: Is deze listener nodig/wensbaar?
     @Cog.listener()
-    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+    async def on_raw_reaction_remove(
+        self, payload: discord.RawReactionActionEvent
+    ):
         # Check if the placement message was sent
-        if not self.emoji_ta_mapping or not self.ta_emoji_mapping or not self.message_id:
+        if (
+            not self.emoji_ta_mapping
+            or not self.ta_emoji_mapping
+            or not self.message_id
+        ):
             return
 
         assert payload.guild_id
@@ -273,7 +335,14 @@ class Groups(Cog):
 
         if role:
             await member.remove_roles(role)
-            await member.send(f"Reaction removed in server '{guild.name}', removing you from '{role.name}'")
+            await member.send(
+                f"Reaction removed in server '{guild.name}', removing you from '{role.name}'"
+            )
 
             # Update placement embed
-            await self.update_placement_message(channel, payload.message_id, payload.guild_id, self.ta_emoji_mapping)
+            await self.update_placement_message(
+                channel,
+                payload.message_id,
+                payload.guild_id,
+                self.ta_emoji_mapping,
+            )

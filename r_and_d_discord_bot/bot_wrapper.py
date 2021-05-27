@@ -26,7 +26,6 @@ class GuildData:
 
 
 class BotWrapper(Bot):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -44,15 +43,21 @@ class BotWrapper(Bot):
 
             owner = guild.owner
             if owner:
-                await owner.send(f"Hello, sorry to bother you but your server '{guild.name}' does not appear to have a 'TA' role. This is required for most operations.")
+                await owner.send(
+                    f"Hello, sorry to bother you but your server '{guild.name}' does not appear to have a 'TA' role. This is required for most operations."
+                )
             else:
-                logging.critical("Could not find owner of server without TA role.")
+                logging.critical(
+                    "Could not find owner of server without TA role."
+                )
             return
 
         self.guild_data[guild.id] = GuildData()
         gd = self.guild_data[guild.id]
         gd.ta = ta
-        gd.student_roles = {t: await get_ta_students_role(guild, t) for t in ta.members}
+        gd.student_roles = {
+            t: await get_ta_students_role(guild, t) for t in ta.members
+        }
 
     @Cog.listener()
     async def on_member_update(self, before, after):
@@ -62,7 +67,9 @@ class BotWrapper(Bot):
 
         # Became TA
         if ta not in before.roles and ta in after.roles:
-            guild_data.student_roles[after] = await get_ta_students_role(guild, after)
+            guild_data.student_roles[after] = await get_ta_students_role(
+                guild, after
+            )
 
         # Exit if no TA
         if ta not in after.roles:
