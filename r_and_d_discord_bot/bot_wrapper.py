@@ -44,7 +44,9 @@ class BotWrapper(Bot):
             owner = guild.owner
             if owner:
                 await owner.send(
-                    f"Hello, sorry to bother you but your server '{guild.name}' does not appear to have a 'TA' role. This is required for most operations."
+                    f"Hello, sorry to bother you but your server \
+                      '{guild.name}' does not appear to have a 'TA' role. \
+                      This is required for most operations."
                 )
             else:
                 logging.critical(
