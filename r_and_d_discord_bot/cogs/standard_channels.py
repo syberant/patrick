@@ -15,6 +15,14 @@ class StandardChannels(Cog):
 
     @command()
     async def standard_channels(self, ctx: Context) -> None:
+        """
+        Creates common Discord channels.
+
+        Create the following standard channels: #students-for-students,
+        #questions, #looking-for-a-partner, #announcements. In the
+        #announcements channel, only members with the TA role and the bot can
+        send messages.
+        """
         if ctx.guild is None:
             # Early exit, since this function crucially depends on the
             # ctx.guild not being None.
