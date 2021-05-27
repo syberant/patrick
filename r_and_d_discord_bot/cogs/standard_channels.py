@@ -25,6 +25,10 @@ class StandardChannels(Cog):
         if ta_role:
             announcements_overwrites[ta_role] = PermissionOverwrite(
                 send_messages=True)
+            bot_user = self.bot.user
+            assert bot_user
+            announcements_overwrites[bot_user] = PermissionOverwrite(
+                send_messages=True)
         else:
             logging.warning("Could not find TA role.")
 
