@@ -27,9 +27,8 @@ class GuildData:
 
 class BotWrapper(Bot):
 
-    # TODO: automatically forward all args
-    def __init__(self, command_prefix: str, intents):
-        super().__init__(command_prefix=command_prefix, intents=intents)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @Cog.listener()
     async def on_ready(self):
