@@ -2,7 +2,6 @@ from discord.ext.commands import Bot, Cog
 from discord import Guild, Member, Role
 from typing import Optional, Dict, Any
 import logging
-import asyncio
 
 
 def get_ta_role(guild: Guild) -> Optional[Role]:
@@ -32,14 +31,12 @@ class BotWrapper(Bot):
     def __init__(self, command_prefix: str, intents):
         super().__init__(command_prefix=command_prefix, intents=intents)
 
-    # TODO: cleaner option to wait for guilds to become available
     @Cog.listener()
     async def on_ready(self):
         # TODO: Use guild_id instead.
         self.guild_data: Dict[Guild, Any] = {}
-        # TODO: Do multiple guilds in parallel
+
         for g in self.guilds:
-            #  asyncio.run(self.init_guild(g))
             await self.init_guild(g)
 
     async def init_guild(self, guild: Guild):
@@ -59,6 +56,23 @@ class BotWrapper(Bot):
         gd.ta = ta
         gd.student_roles = {t: await get_ta_students_role(guild, t) for t in ta.members}
 
-    # TODO
-    #  @Cog.listener()
-    #  def on_member_update(self, before, after):
+    @Cog.listener()
+    async def on_member_update(self, before, after):
+        guild = after.guild
+        guild_data = self.guild_data[guild]
+        ta = guild_data.ta
+
+        # Became TA
+        if ta not in before.roles and ta in after.roles:
+            guild_data.student_roles[after] = await get_ta_students_role(guild, after)
+
+        # Exit if no TA
+        if ta not in after.roles:
+            return
+
+        # Changed nickname
+        if before.nick != after.nick:
+            name = after.nick or after.name
+            # Change role name
+            await guild_data.student_roles[after].edit(name=f"Students {name}")
+            # TODO: Also change category name?
