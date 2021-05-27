@@ -1,7 +1,7 @@
 import logging
 import random
 import discord
-from discord.ext.commands import Cog, command, has_permissions
+from discord.ext.commands import Cog, Context, command, has_permissions
 from discord import (Embed, Guild, Member, Role, PermissionOverwrite,
                      CategoryChannel, TextChannel, PartialEmoji)
 from typing import Optional, Tuple, List, Dict
@@ -14,7 +14,7 @@ from r_and_d_discord_bot.helper_functions import (
 
 
 async def get_or_create_category(guild: Guild, name: str, overwrites) \
-        -> Optional[CategoryChannel]:
+        -> CategoryChannel:
     for c in guild.categories:
         if c.name == name:
             return c
@@ -47,12 +47,12 @@ class Groups(Cog):
         self.ta_emoji_mapping: Optional[Dict[Role, PartialEmoji]] = None
         self.message_id: Optional[int] = None
 
-    def placement_embed(self, guild: Guild, ta_emoji_mapping: Dict[Role, PartialEmoji]) -> Embed:
+    def placement_embed(self, guild_id: int, ta_emoji_mapping: Dict[Role, PartialEmoji]) -> Embed:
         embed = Embed(
             title="Student roles",
             description="Use the emojis below to place yourself with a TA. Please spread evenly over the TAs.")
 
-        guild_data = self.bot.guild_data[guild]
+        guild_data = self.bot.guild_data[guild_id]
         for t in guild_data.ta.members:
             name = t.nick or t.name
             role = guild_data.student_roles[t]
@@ -60,19 +60,22 @@ class Groups(Cog):
 
         return embed
 
-    async def update_placement_message(self, channel, message_id: int, guild: Guild, ta_emoji_mapping: Dict[Role, discord.PartialEmoji]):
-        embed = self.placement_embed(guild, ta_emoji_mapping)
+    async def update_placement_message(self, channel, message_id: int, guild_id: int, ta_emoji_mapping: Dict[Role, discord.PartialEmoji]):
+        embed = self.placement_embed(guild_id, ta_emoji_mapping)
         message = await channel.fetch_message(message_id)
         await message.edit(embed=embed)
 
     # TODO: Ask for confirmation before creating
     @command()
     @has_permissions(manage_channels=True)
-    async def create_ta_categories(self, ctx):
-        guild_data = self.bot.guild_data[ctx.guild]
+    async def create_ta_categories(self, ctx: Context):
+        if not ctx.guild:
+            return
+
+        guild_data = self.bot.guild_data[ctx.guild.id]
         role = guild_data.ta
 
-        added = {}
+        added: Dict[CategoryChannel, List[discord.abc.GuildChannel]] = {}
 
         for ta in role.members:
             category_name = "TA " + (ta.nick or ta.name)
@@ -88,12 +91,12 @@ class Groups(Cog):
             category = await get_or_create_category(ctx.guild, category_name,
                                                     overwrites)
             added[category] = []
-            res = await create_text_channel(ctx, "tekst", category=category)
-            if res:
-                added[category].append(res)
-            res = await create_voice_channel(ctx, "spraak", category=category)
-            if res:
-                added[category].append(res)
+            text = await create_text_channel(ctx, "tekst", category=category)
+            if text:
+                added[category].append(text)
+            voice = await create_voice_channel(ctx, "spraak", category=category)
+            if voice:
+                added[category].append(voice)
 
         embed = Embed(
             title="Created TA categories",
@@ -115,8 +118,11 @@ class Groups(Cog):
 
     @command()
     @has_permissions(manage_roles=True)
-    async def place_students(self, ctx):
-        guild_data = self.bot.guild_data[ctx.guild]
+    async def place_students(self, ctx: Context):
+        if not ctx.guild:
+            return
+
+        guild_data = self.bot.guild_data[ctx.guild.id]
         ta = guild_data.ta
 
         students = [s for s in ctx.guild.members if is_unplaced_student(s, ta)]
@@ -124,7 +130,7 @@ class Groups(Cog):
                  if ta in t.roles]
         member_counted_roles = [(len(r.members), r) for r in roles]
 
-        distribution = {r: [] for r in roles}
+        distribution: Dict[Role, List[Member]] = {r: [] for r in roles}
 
         for s in students:
             r = self.place_student(member_counted_roles)
@@ -144,8 +150,11 @@ class Groups(Cog):
                     await s.add_roles(r)
 
     @command()
-    async def groups_overview(self, ctx):
-        guild_data = self.bot.guild_data[ctx.guild]
+    async def groups_overview(self, ctx: Context):
+        if not ctx.guild:
+            return
+
+        guild_data = self.bot.guild_data[ctx.guild.id]
         ta = guild_data.ta
 
         student_roles = [guild_data.student_roles[t] for t in ctx.guild.members
@@ -161,8 +170,11 @@ class Groups(Cog):
         await ctx.send(embed=embed)
 
     @command()
-    async def post_self_placement_message(self, ctx, target_channel: TextChannel):
-        guild_data = self.bot.guild_data[ctx.guild]
+    async def post_self_placement_message(self, ctx: Context, target_channel: TextChannel):
+        if not ctx.guild:
+            return
+
+        guild_data = self.bot.guild_data[ctx.guild.id]
         ta = guild_data.ta
 
         shuffled = random.sample(EMOJIS, len(ta.members))
@@ -178,7 +190,7 @@ class Groups(Cog):
             emoji_ta[emoji] = role
             ta_emoji[role] = emoji
 
-        embed = self.placement_embed(ctx.guild, ta_emoji)
+        embed = self.placement_embed(ctx.guild.id, ta_emoji)
 
         message = await target_channel.send(embed=embed)
         for e in emoji_ta.keys():
@@ -207,10 +219,8 @@ class Groups(Cog):
             return
 
         assert payload.guild_id
-        guild = self.bot.get_guild(payload.guild_id)
-        assert guild
 
-        ta = self.bot.guild_data[guild].ta
+        ta = self.bot.guild_data[payload.guild_id].ta
         # Don't assign to bots (protection against our own reactions)
         # Disallow enrolling with multiple TAs
         if not is_unplaced_student(payload.member, ta):
@@ -223,10 +233,13 @@ class Groups(Cog):
 
         if role:
             await payload.member.add_roles(role)
+
+            guild = self.bot.get_guild(payload.guild_id)
+            assert guild
             await payload.member.send(f"Reaction received in server '{guild.name}', placing you in '{role.name}'")
 
             # Update placement embed
-            await self.update_placement_message(channel, payload.message_id, guild, self.ta_emoji_mapping)
+            await self.update_placement_message(channel, payload.message_id, payload.guild_id, self.ta_emoji_mapping)
         else:
             # Emoji does not correspond to a TA, removing to avoid confusion
             message = await channel.fetch_message(payload.message_id)
@@ -263,4 +276,4 @@ class Groups(Cog):
             await member.send(f"Reaction removed in server '{guild.name}', removing you from '{role.name}'")
 
             # Update placement embed
-            await self.update_placement_message(channel, payload.message_id, guild, self.ta_emoji_mapping)
+            await self.update_placement_message(channel, payload.message_id, payload.guild_id, self.ta_emoji_mapping)
