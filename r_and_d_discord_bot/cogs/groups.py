@@ -230,7 +230,6 @@ class Groups(Cog):
         for t in ta.members:
             emoji = chosen_emoji[-1]
             chosen_emoji.pop()
-            # TODO: do something when there's not enough emojis? We have a lot.
             role = guild_data.student_roles[t]
             emoji_ta[emoji] = role
             ta_emoji[role] = emoji
@@ -305,7 +304,6 @@ class Groups(Cog):
             message = await channel.fetch_message(payload.message_id)
             await message.clear_reaction(payload.emoji)
 
-    # TODO: Is deze listener nodig/wensbaar?
     @Cog.listener()
     async def on_raw_reaction_remove(
         self, payload: discord.RawReactionActionEvent
