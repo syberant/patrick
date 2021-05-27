@@ -3,7 +3,7 @@ import random
 import discord
 from discord.ext.commands import Cog, command, has_permissions
 from discord import (Embed, Guild, Member, Role, PermissionOverwrite,
-                     CategoryChannel)
+                     CategoryChannel, TextChannel, PartialEmoji)
 from typing import Optional, Tuple, List, Dict
 from r_and_d_discord_bot.bot_wrapper import BotWrapper
 from r_and_d_discord_bot.helper_functions import (
@@ -43,11 +43,11 @@ class Groups(Cog):
 
     def __init__(self, bot: BotWrapper):
         self.bot = bot
-        self.emoji_ta_mapping = None
-        self.ta_emoji_mapping = None
-        self.message_id = None
+        self.emoji_ta_mapping: Optional[Dict[PartialEmoji, Role]] = None
+        self.ta_emoji_mapping: Optional[Dict[Role, PartialEmoji]] = None
+        self.message_id: Optional[int] = None
 
-    def placement_embed(self, guild: Guild, ta_emoji_mapping: Dict[Role, discord.PartialEmoji]) -> Embed:
+    def placement_embed(self, guild: Guild, ta_emoji_mapping: Dict[Role, PartialEmoji]) -> Embed:
         embed = Embed(
             title="Student roles",
             description="Use the emojis below to place yourself with a TA. Please spread evenly over the TAs.")
@@ -161,12 +161,12 @@ class Groups(Cog):
         await ctx.send(embed=embed)
 
     @command()
-    async def post_self_placement_message(self, ctx):
+    async def post_self_placement_message(self, ctx, target_channel: TextChannel):
         guild_data = self.bot.guild_data[ctx.guild]
         ta = guild_data.ta
 
         shuffled = random.sample(EMOJIS, len(ta.members))
-        chosen_emoji = [discord.PartialEmoji(name=e) for e in shuffled]
+        chosen_emoji = [PartialEmoji(name=e) for e in shuffled]  # type: ignore
 
         ta_emoji = {}
         emoji_ta = {}
@@ -180,7 +180,7 @@ class Groups(Cog):
 
         embed = self.placement_embed(ctx.guild, ta_emoji)
 
-        message = await ctx.send(embed=embed)
+        message = await target_channel.send(embed=embed)
         for e in emoji_ta.keys():
             try:
                 await message.add_reaction(e)
@@ -199,7 +199,7 @@ class Groups(Cog):
         assert payload.member
 
         # Check if the placement message was sent
-        if not self.emoji_ta_mapping or not self.message_id:
+        if not self.emoji_ta_mapping or not self.ta_emoji_mapping or not self.message_id:
             return
 
         # Only count reactions to the right message
@@ -217,6 +217,7 @@ class Groups(Cog):
             return
 
         channel = await self.bot.fetch_channel(payload.channel_id)
+        assert isinstance(channel, TextChannel)
 
         role = self.emoji_ta_mapping.get(payload.emoji)
 
@@ -235,7 +236,7 @@ class Groups(Cog):
     @Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         # Check if the placement message was sent
-        if not self.emoji_ta_mapping or not self.message_id:
+        if not self.emoji_ta_mapping or not self.ta_emoji_mapping or not self.message_id:
             return
 
         assert payload.guild_id
@@ -243,6 +244,7 @@ class Groups(Cog):
         assert guild
 
         member = guild.get_member(payload.user_id)
+        assert member
 
         # Don't remove from bots (protection against our own reactions)
         if member.bot:
