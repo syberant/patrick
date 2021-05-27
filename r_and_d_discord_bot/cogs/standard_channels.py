@@ -21,7 +21,7 @@ class StandardChannels(Cog):
             ctx.guild.default_role: PermissionOverwrite(send_messages=False)
         }
 
-        ta_role = self.bot.guild_data[ctx.guild].ta
+        ta_role = self.bot.guild_data[ctx.guild.id].ta
         if ta_role:
             announcements_overwrites[ta_role] = PermissionOverwrite(
                 send_messages=True)

@@ -32,8 +32,7 @@ class BotWrapper(Bot):
 
     @Cog.listener()
     async def on_ready(self):
-        # TODO: Use guild_id instead.
-        self.guild_data: Dict[Guild, Any] = {}
+        self.guild_data: Dict[int, Any] = {}
 
         for g in self.guilds:
             await self.init_guild(g)
@@ -50,15 +49,15 @@ class BotWrapper(Bot):
                 logging.critical("Could not find owner of server without TA role.")
             return
 
-        self.guild_data[guild] = GuildData()
-        gd = self.guild_data[guild]
+        self.guild_data[guild.id] = GuildData()
+        gd = self.guild_data[guild.id]
         gd.ta = ta
         gd.student_roles = {t: await get_ta_students_role(guild, t) for t in ta.members}
 
     @Cog.listener()
     async def on_member_update(self, before, after):
         guild = after.guild
-        guild_data = self.guild_data[guild]
+        guild_data = self.guild_data[guild.id]
         ta = guild_data.ta
 
         # Became TA
