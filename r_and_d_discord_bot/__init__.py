@@ -1,8 +1,12 @@
 import discord
 from discord import TextChannel
 from discord.ext.commands import Bot, Context, CheckFailure
-from r_and_d_discord_bot.cogs import Development, Groups, StandardChannels
 from r_and_d_discord_bot.bot_wrapper import BotWrapper
+from r_and_d_discord_bot.cogs import Development, Groups, StandardChannels
+import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class OnlyAdminCommands(CheckFailure):
@@ -31,4 +35,12 @@ def main():
         raise OnlyAdminCommands("Command not sent in text channel of server," +
                                 " so not in admin channel")
 
-    bot.run('ODM0NzU0MjM2NjIwMzQxMjY4.YIFfdg.cAu7OaLqawMf0S3KI_b_kcFPqlY')
+    token = os.environ.get("DISCORD_BOT_TOKEN")
+    if not token:
+        logging.critical(
+            "No token provided, please set the environment " +
+            "variable DISCORD_BOT_TOKEN to the Discord bot's token"
+        )
+        return
+
+    bot.run(token)
