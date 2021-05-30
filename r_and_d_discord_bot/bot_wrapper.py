@@ -51,7 +51,7 @@ class BotWrapper(Bot):
                       This is required for most operations."
                 )
             else:
-                logger.critical(
+                logger.error(
                     "Could not find owner of server without TA role."
                 )
             return
