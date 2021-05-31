@@ -16,7 +16,7 @@ class OnlyAdminCommands(CheckFailure):
 def main():
     intents = discord.Intents.default()
     intents.members = True
-    bot = BotWrapper(command_prefix='>', intents=intents)
+    bot = BotWrapper("guilddata.pickle", command_prefix='>', intents=intents)
 
     bot.add_cog(Development(bot))
     bot.add_cog(Groups(bot))

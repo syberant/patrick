@@ -32,12 +32,12 @@ async def get_or_create_category(
     return await guild.create_category(name, overwrites=overwrites)
 
 
-def is_unplaced_student(m: Member, ta: Role):
+def is_unplaced_student(m: Member, ta_role: Role):
     if m.bot:
         return False
 
     for r in m.roles:
-        if r == ta or r.name.startswith("Students"):
+        if r == ta_role or r.name.startswith("Students"):
             return False
 
     return True
@@ -63,10 +63,12 @@ class Groups(Cog):
                          Please spread evenly over the TAs.",
         )
 
-        guild_data = self.bot.guild_data[guild_id]
-        for t in guild_data.ta.members:
-            name = t.nick or t.name
-            role = guild_data.student_roles[t]
+        guild = self.bot.get_guild(guild_id)
+        assert guild
+        ta_role = self.bot.get_ta_role(guild)
+        for ta in ta_role.members:
+            name = ta.nick or ta.name
+            role = self.bot.get_student_role(guild, ta)
             embed.add_field(
                 name=name,
                 value=f"{ta_emoji_mapping[role]} Currently {len(role.members)} \
@@ -100,14 +102,13 @@ class Groups(Cog):
         if not ctx.guild:
             return
 
-        guild_data = self.bot.guild_data[ctx.guild.id]
-        role = guild_data.ta
+        ta_role = self.bot.get_ta_role(ctx.guild)
 
         added: Dict[CategoryChannel, List[discord.abc.GuildChannel]] = {}
 
-        for ta in role.members:
+        for ta in ta_role.members:
             category_name = "TA " + (ta.nick or ta.name)
-            students = guild_data.student_roles[ta]
+            students = self.bot.get_student_role(ctx.guild, ta)
             overwrites = {
                 ctx.guild.default_role: PermissionOverwrite(
                     view_channel=False
@@ -171,15 +172,10 @@ class Groups(Cog):
         if not ctx.guild:
             return
 
-        guild_data = self.bot.guild_data[ctx.guild.id]
-        ta = guild_data.ta
+        ta_role = self.bot.get_ta_role(ctx.guild)
 
-        students = [s for s in ctx.guild.members if is_unplaced_student(s, ta)]
-        roles = [
-            guild_data.student_roles[t]
-            for t in ctx.guild.members
-            if ta in t.roles
-        ]
+        students = [s for s in ctx.guild.members if is_unplaced_student(s, ta_role)]
+        roles = [self.bot.get_student_role(ctx.guild, ta) for ta in ta_role.members]
         member_counted_roles = [(len(r.members), r) for r in roles]
 
         distribution: Dict[Role, List[Member]] = {r: [] for r in roles}
@@ -215,14 +211,9 @@ class Groups(Cog):
         if not ctx.guild:
             return
 
-        guild_data = self.bot.guild_data[ctx.guild.id]
-        ta = guild_data.ta
+        ta_role = self.bot.get_ta_role(ctx.guild)
 
-        student_roles = [
-            guild_data.student_roles[t]
-            for t in ctx.guild.members
-            if ta in t.roles
-        ]
+        student_roles = [self.bot.get_student_role(ctx.guild, ta) for ta in ta_role.members]
         distribution = {r: r.members for r in student_roles}
 
         embed = Embed(
@@ -256,16 +247,15 @@ class Groups(Cog):
         if not ctx.guild:
             return
 
-        guild_data = self.bot.guild_data[ctx.guild.id]
-        ta = guild_data.ta
+        ta_role = self.bot.get_ta_role(ctx.guild)
 
-        shuffled = random.sample(EMOJIS, len(ta.members))
+        shuffled = random.sample(EMOJIS, len(ta_role.members))
         chosen_emoji = [PartialEmoji(name=e) for e in shuffled]  # type: ignore
 
         ta_emoji = {}
         emoji_ta = {}
-        for (t, emoji) in zip(ta.members, chosen_emoji):
-            role = guild_data.student_roles[t]
+        for (ta, emoji) in zip(ta_role.members, chosen_emoji):
+            role = self.bot.get_student_role(ctx.guild, ta)
             emoji_ta[emoji] = role
             ta_emoji[role] = emoji
 
@@ -306,10 +296,12 @@ class Groups(Cog):
 
         assert payload.guild_id
 
-        ta = self.bot.guild_data[payload.guild_id].ta
+        guild = self.bot.get_guild(payload.guild_id)
+        assert guild
+        ta_role = self.bot.get_ta_role(guild)
         # Don't assign to bots (protection against our own reactions)
         # Disallow enrolling with multiple TAs
-        if not is_unplaced_student(payload.member, ta):
+        if not is_unplaced_student(payload.member, ta_role):
             return
 
         channel = await self.bot.fetch_channel(payload.channel_id)
