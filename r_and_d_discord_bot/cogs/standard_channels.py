@@ -32,16 +32,13 @@ class StandardChannels(Cog):
             ctx.guild.default_role: PermissionOverwrite(send_messages=False)
         }
 
-        ta_role = self.bot.guild_data[ctx.guild.id].ta
-        if ta_role:
-            announcements_overwrites[ta_role] = PermissionOverwrite(
-                send_messages=True)
-            bot_user = self.bot.user
-            assert bot_user
-            announcements_overwrites[bot_user] = PermissionOverwrite(
-                send_messages=True)
-        else:
-            logger.warning("Could not find TA role.")
+        ta_role = self.bot.get_ta_role(ctx.guild)
+        announcements_overwrites[ta_role] = PermissionOverwrite(
+            send_messages=True)
+        bot_user = self.bot.user
+        assert bot_user
+        announcements_overwrites[bot_user] = PermissionOverwrite(
+            send_messages=True)
 
         channels: List[Dict[str, object]] = [
             {
