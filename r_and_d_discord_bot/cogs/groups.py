@@ -90,6 +90,13 @@ class Groups(Cog):
     @command()
     @has_permissions(manage_channels=True)
     async def create_ta_categories(self, ctx: Context):
+        """
+        Creates categories for TAs and their students.
+
+        For every TA a category, a text channel and a voice channel will be
+        created. These will be private i.e. only visible to the TA and his/her
+        students.
+        """
         if not ctx.guild:
             return
 
@@ -147,6 +154,20 @@ class Groups(Cog):
     @command()
     @has_permissions(manage_roles=True)
     async def place_students(self, ctx: Context):
+        """
+        Randomly distribute students over TAs.
+
+        This command will automatically and randomly distribute new students
+        over the TAs. The placement will balance students among TAs and as
+        such TAs with the fewest existing students will be the first to receive
+        new students.
+
+        New students are defined as accounts that satisfy all of the following
+        conditions:
+            - They are not a bot
+            - They do not have the `TA` role
+            - They do not have any `Students {ta}` role
+        """
         if not ctx.guild:
             return
 
@@ -185,6 +206,12 @@ class Groups(Cog):
 
     @command()
     async def groups_overview(self, ctx: Context):
+        """
+        Overview of TAs and their students.
+
+        For each TA it will print the names of their students, i.e. those with
+        the `Students {ta}` role.
+        """
         if not ctx.guild:
             return
 
@@ -213,6 +240,19 @@ class Groups(Cog):
     async def post_self_placement_message(
         self, ctx: Context, target_channel: TextChannel
     ):
+        """
+        Allow students to choose their TA.
+
+        Posts a message which lists all TAs, the amount of students they have
+        and their associated emoji. These emoji will be posted as reactions
+        and if a student clicks on them they would be assigned to that TA. If
+        they then remove their reaction their `Students {ta}` role will be
+        removed as well.
+
+        Requires `target_channel` argument which is the channel where the
+        message will be posted. The emoji are randomly sampled from a (large)
+        preselected list.
+        """
         if not ctx.guild:
             return
 
