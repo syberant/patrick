@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import random
 import discord
@@ -12,7 +13,7 @@ from discord import (
     TextChannel,
     PartialEmoji,
 )
-from typing import Optional, Tuple, List, Dict
+from typing import Tuple, List, Dict
 from r_and_d_discord_bot.bot_wrapper import BotWrapper
 from r_and_d_discord_bot.helper_functions import (
     create_text_channel,
@@ -43,35 +44,58 @@ def is_unplaced_student(m: Member, ta_role: Role):
     return True
 
 
-# Some of these are broken: ❄️🐨☘️🍀☄️💥☀️🌤⛅️🌥☁️🌦🌧⛈🌩🌨❄️☃️🌬💨💧💦☂️🌊⛳️🪁✈️🛫
-EMOJIS = "🐶🐱🐭🐹🐰🦊🐻🐼🐻🐯🦁🐮🐷🐽🐸🐵🙈🙉🙊🐒🐔🐧🐦🐤🐣🐥🦆🦅🦉🦇🐺🐗🐴🦄🐝🪱🐛🦋🐌🐞🐜🪰🪲🪳🦟🦗🕷🕸🦂🐢🐍🦎🦖🦕🐙🦑🦐🦞🦀🐡🐠🐟🐬🐳🐋🦈🐊🐅🐆🦓🦍🦧🦣🐘🦛🦏🐪🐫🦒🦘🦬🐃🐂🐄🐎🐖🐏🐑🦙🐐🦌🐕🐩🦮🐕🦺🐈🪶🐓🦃🦤🦚🦜🦢🦩🕊🐇🦝🦨🦡🦫🦦🦥🐁🐀🐿🦔🐾🐉🐲🌵🎄🌲🌳🌴🪵🌱🌿🎍🪴🎋🍃🍂🍁🍄🐚🪨🌾💐🌷🌹🥀🌺🌸🌼🌻🌞🌝🌛🌜🌚🌕🌖🌗🌘🌑🌒🌓🌔🌙🌎🌍🌏🪐💫🌟✨🔥🌪🌈🌫🍏🍎🍐🍊🍋🍌🍉🍇🍓🫐🍈🍒🍑🥭🍍🥥🥝🍅🍆🥑🥦🥬🥒🌶🫑🌽🥕🫒🧄🧅🥔🍠🥐🥯🍞🥖🥨🧀🥚🍳🧈🥞🧇🥓🥩🍗🍖🦴🌭🍔🍟🍕🫓🥪🥙🧆🌮🌯🫔🥗🥘🫕🥫🍝🍜🍲🍛🍣🍱🥟🦪🍤🍙🍚🍘🍥🥠🥮🍢🍡🍧🍨🍦🥧🧁🍰🎂🍮🍭🍬🍫🍿🍩🍪🌰🥜🍯🥛🍼🫖🍵🧃🥤🧋🍶🍺🍻🥂🍷🥃🍸🍹🧉🍾🧊🥄🍴🍽🥣🥡🥢🧂🏀🏈🥎🎾🏐🏉🥏🎱🪀🏓🏸🏒🏑🥍🏏🪃🥅🏹🎣🤿🥊🥋🎽🛹🛼🛷⛸🥌🎿⛷🏂🪂🏆🥇🥈🥉🏅🎖🏵🎗🎫🎟🎪🎭🩰🎨🎬🎤🎧🎼🎹🥁🪘🎷🎺🪗🎸🪕🎻🎲♟🎯🎳🎮🎰🧩🚗🚕🚙🚌🚎🏎🚓🚑🚒🚐🛻🚚🚛🚜🦯🦽🦼🛴🚲🛵🏍🛺🚨🚔🚍🚘🚖🚡🚠🚟🚃🚋🚞🚝🚄🚅🚈🚂🚆🚇🚊🚉🛬🛩💺🛰🚀🛸🚁🛶🚤🛥🛳⛴🚢🪝🚧🚦🚥🚏🗺🗿🗽🗼🏰🏯🏟🎡🎢🎠⛱🏖🏝🏜🌋⛰🏔🗻🏕🛖🏠🏡🏘🏚🏗🏭🏢🏬🏣🏤🏥🏦🏨🏪🏫🏩💒🏛🕌🕍🛕🕋⛩🛤🛣🗾🎑🏞🌅🌄🌠🎇🎆🌇🌆🏙🌃🌌🌉🌁"  # noqa: E501
+class SelfPlacementMessageData:
+    emoji_ta_mapping: Dict[PartialEmoji, Role]
+    ta_emoji_mapping: Dict[Role, PartialEmoji]
+    message_id: int
 
+    async def _send_message(self, embed: Embed, target_channel: TextChannel):
+        message = await target_channel.send(embed=embed)
+        try:
+            futures = [message.add_reaction(e) for e in self.emoji_ta_mapping.keys()]
+            # Execute concurrently
+            await asyncio.gather(*futures)
+        except discord.HTTPException:
+            logger.warning("Error trying to use emoji", exc_info=True)
+        self.message_id = message.id
 
-class Groups(Cog):
-    def __init__(self, bot: BotWrapper):
-        self.bot = bot
-        self.emoji_ta_mapping: Optional[Dict[PartialEmoji, Role]] = None
-        self.ta_emoji_mapping: Optional[Dict[Role, PartialEmoji]] = None
-        self.message_id: Optional[int] = None
+    def _choose_emoji(self, guild: Guild, bot: BotWrapper):
+        ta_role = bot.get_ta_role(guild)
 
-    def placement_embed(
-        self, guild_id: int, ta_emoji_mapping: Dict[Role, PartialEmoji]
-    ) -> Embed:
+        shuffled = random.sample(EMOJIS, len(ta_role.members))
+        chosen_emoji = [PartialEmoji(name=e) for e in shuffled]  # type: ignore
+
+        ta_emoji = {}
+        emoji_ta = {}
+        for (ta, emoji) in zip(ta_role.members, chosen_emoji):
+            role = bot.get_student_role(guild, ta)
+            emoji_ta[emoji] = role
+            ta_emoji[role] = emoji
+        self.ta_emoji_mapping = ta_emoji
+        self.emoji_ta_mapping = emoji_ta
+
+    def __init__(self, guild: Guild, target_channel: TextChannel, bot: BotWrapper):
+        self._choose_emoji(guild, bot)
+
+        embed = self.placement_embed(guild.id, bot)
+        asyncio.run(self._send_message(embed, target_channel))
+
+    def placement_embed(self, guild_id: int, bot: BotWrapper) -> Embed:
         embed = Embed(
             title="Student roles",
             description="Use the emojis below to place yourself with a TA. \
                          Please spread evenly over the TAs.",
         )
 
-        guild = self.bot.get_guild(guild_id)
+        guild = bot.get_guild(guild_id)
         assert guild
-        ta_role = self.bot.get_ta_role(guild)
+        ta_role = bot.get_ta_role(guild)
         for ta in ta_role.members:
             name = ta.nick or ta.name
-            role = self.bot.get_student_role(guild, ta)
+            role = bot.get_student_role(guild, ta)
             embed.add_field(
                 name=name,
-                value=f"{ta_emoji_mapping[role]} Currently {len(role.members)} \
+                value=f"{self.ta_emoji_mapping[role]} Currently {len(role.members)} \
                         student(s).",
             )
 
@@ -82,11 +106,23 @@ class Groups(Cog):
         channel,
         message_id: int,
         guild_id: int,
-        ta_emoji_mapping: Dict[Role, discord.PartialEmoji],
+        bot: BotWrapper,
     ):
-        embed = self.placement_embed(guild_id, ta_emoji_mapping)
+        embed = self.placement_embed(guild_id, bot)
+        # TODO: Get channel myself
         message = await channel.fetch_message(message_id)
         await message.edit(embed=embed)
+
+
+# Some of these are broken: ❄️🐨☘️🍀☄️💥☀️🌤⛅️🌥☁️🌦🌧⛈🌩🌨❄️☃️🌬💨💧💦☂️🌊⛳️🪁✈️🛫
+EMOJIS = "🐶🐱🐭🐹🐰🦊🐻🐼🐻🐯🦁🐮🐷🐽🐸🐵🙈🙉🙊🐒🐔🐧🐦🐤🐣🐥🦆🦅🦉🦇🐺🐗🐴🦄🐝🪱🐛🦋🐌🐞🐜🪰🪲🪳🦟🦗🕷🕸🦂🐢🐍🦎🦖🦕🐙🦑🦐🦞🦀🐡🐠🐟🐬🐳🐋🦈🐊🐅🐆🦓🦍🦧🦣🐘🦛🦏🐪🐫🦒🦘🦬🐃🐂🐄🐎🐖🐏🐑🦙🐐🦌🐕🐩🦮🐕🦺🐈🪶🐓🦃🦤🦚🦜🦢🦩🕊🐇🦝🦨🦡🦫🦦🦥🐁🐀🐿🦔🐾🐉🐲🌵🎄🌲🌳🌴🪵🌱🌿🎍🪴🎋🍃🍂🍁🍄🐚🪨🌾💐🌷🌹🥀🌺🌸🌼🌻🌞🌝🌛🌜🌚🌕🌖🌗🌘🌑🌒🌓🌔🌙🌎🌍🌏🪐💫🌟✨🔥🌪🌈🌫🍏🍎🍐🍊🍋🍌🍉🍇🍓🫐🍈🍒🍑🥭🍍🥥🥝🍅🍆🥑🥦🥬🥒🌶🫑🌽🥕🫒🧄🧅🥔🍠🥐🥯🍞🥖🥨🧀🥚🍳🧈🥞🧇🥓🥩🍗🍖🦴🌭🍔🍟🍕🫓🥪🥙🧆🌮🌯🫔🥗🥘🫕🥫🍝🍜🍲🍛🍣🍱🥟🦪🍤🍙🍚🍘🍥🥠🥮🍢🍡🍧🍨🍦🥧🧁🍰🎂🍮🍭🍬🍫🍿🍩🍪🌰🥜🍯🥛🍼🫖🍵🧃🥤🧋🍶🍺🍻🥂🍷🥃🍸🍹🧉🍾🧊🥄🍴🍽🥣🥡🥢🧂🏀🏈🥎🎾🏐🏉🥏🎱🪀🏓🏸🏒🏑🥍🏏🪃🥅🏹🎣🤿🥊🥋🎽🛹🛼🛷⛸🥌🎿⛷🏂🪂🏆🥇🥈🥉🏅🎖🏵🎗🎫🎟🎪🎭🩰🎨🎬🎤🎧🎼🎹🥁🪘🎷🎺🪗🎸🪕🎻🎲♟🎯🎳🎮🎰🧩🚗🚕🚙🚌🚎🏎🚓🚑🚒🚐🛻🚚🚛🚜🦯🦽🦼🛴🚲🛵🏍🛺🚨🚔🚍🚘🚖🚡🚠🚟🚃🚋🚞🚝🚄🚅🚈🚂🚆🚇🚊🚉🛬🛩💺🛰🚀🛸🚁🛶🚤🛥🛳⛴🚢🪝🚧🚦🚥🚏🗺🗿🗽🗼🏰🏯🏟🎡🎢🎠⛱🏖🏝🏜🌋⛰🏔🗻🏕🛖🏠🏡🏘🏚🏗🏭🏢🏬🏣🏤🏥🏦🏨🏪🏫🏩💒🏛🕌🕍🛕🕋⛩🛤🛣🗾🎑🏞🌅🌄🌠🎇🎆🌇🌆🏙🌃🌌🌉🌁"  # noqa: E501
+
+
+class Groups(Cog):
+    bot: BotWrapper
+
+    def __init__(self, bot: BotWrapper):
+        self.bot = bot
 
     # TODO: Ask for confirmation before creating
     @command()
@@ -244,57 +280,28 @@ class Groups(Cog):
         message will be posted. The emoji are randomly sampled from a (large)
         preselected list.
         """
-        if not ctx.guild:
+        guild = ctx.guild
+        if not guild:
             return
 
-        ta_role = self.bot.get_ta_role(ctx.guild)
-
-        shuffled = random.sample(EMOJIS, len(ta_role.members))
-        chosen_emoji = [PartialEmoji(name=e) for e in shuffled]  # type: ignore
-
-        ta_emoji = {}
-        emoji_ta = {}
-        for (ta, emoji) in zip(ta_role.members, chosen_emoji):
-            role = self.bot.get_student_role(ctx.guild, ta)
-            emoji_ta[emoji] = role
-            ta_emoji[role] = emoji
-
-        embed = self.placement_embed(ctx.guild.id, ta_emoji)
-
-        message = await target_channel.send(embed=embed)
-        for e in emoji_ta.keys():
-            try:
-                await message.add_reaction(e)
-            except discord.HTTPException:
-                logger.warning(
-                    f"Error trying to use emoji: {str(e)} with name {e.name}"
-                )
-                pass
-
-        # TODO: use database
-        self.message_id = message.id
-        self.emoji_ta_mapping = emoji_ta
-        self.ta_emoji_mapping = ta_emoji
+        guild_data = self.bot.guild_data[guild.id]
+        guild_data.placement_message = SelfPlacementMessageData(guild, target_channel, self.bot)
 
     @Cog.listener()
     async def on_raw_reaction_add(
         self, payload: discord.RawReactionActionEvent
     ):
         assert payload.member
+        assert payload.guild_id
 
+        data = self.bot.guild_data[payload.guild_id].placement_message
         # Check if the placement message was sent
-        if (
-            not self.emoji_ta_mapping
-            or not self.ta_emoji_mapping
-            or not self.message_id
-        ):
+        if not data:
             return
 
         # Only count reactions to the right message
-        if payload.message_id != self.message_id:
+        if payload.message_id != data.message_id:
             return
-
-        assert payload.guild_id
 
         guild = self.bot.get_guild(payload.guild_id)
         assert guild
@@ -307,7 +314,7 @@ class Groups(Cog):
         channel = await self.bot.fetch_channel(payload.channel_id)
         assert isinstance(channel, TextChannel)
 
-        role = self.emoji_ta_mapping.get(payload.emoji)
+        role = data.emoji_ta_mapping.get(payload.emoji)
 
         if role:
             await payload.member.add_roles(role)
@@ -315,16 +322,15 @@ class Groups(Cog):
             guild = self.bot.get_guild(payload.guild_id)
             assert guild
             await payload.member.send(
-                f"Reaction received in server '{guild.name}', \
-                  placing you in '{role.name}'"
+                f"Reaction received in server '{guild.name}', placing you in '{role.name}'"
             )
 
             # Update placement embed
-            await self.update_placement_message(
+            await data.update_placement_message(
                 channel,
                 payload.message_id,
                 payload.guild_id,
-                self.ta_emoji_mapping,
+                self.bot
             )
         else:
             # Emoji does not correspond to a TA, removing to avoid confusion
@@ -335,15 +341,13 @@ class Groups(Cog):
     async def on_raw_reaction_remove(
         self, payload: discord.RawReactionActionEvent
     ):
+        assert payload.guild_id
+
+        data = self.bot.guild_data[payload.guild_id].placement_message
         # Check if the placement message was sent
-        if (
-            not self.emoji_ta_mapping
-            or not self.ta_emoji_mapping
-            or not self.message_id
-        ):
+        if not data:
             return
 
-        assert payload.guild_id
         guild = self.bot.get_guild(payload.guild_id)
         assert guild
 
@@ -360,12 +364,12 @@ class Groups(Cog):
             return
 
         # Only count reactions to the right message
-        if payload.message_id != self.message_id:
+        if payload.message_id != data.message_id:
             return
 
         channel = await self.bot.fetch_channel(payload.channel_id)
 
-        role = self.emoji_ta_mapping.get(payload.emoji)
+        role = data.emoji_ta_mapping.get(payload.emoji)
 
         if role:
             await member.remove_roles(role)
@@ -375,9 +379,9 @@ class Groups(Cog):
             )
 
             # Update placement embed
-            await self.update_placement_message(
+            await data.update_placement_message(
                 channel,
                 payload.message_id,
                 payload.guild_id,
-                self.ta_emoji_mapping,
+                self.bot
             )
