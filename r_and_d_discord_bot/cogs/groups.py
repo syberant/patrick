@@ -354,6 +354,11 @@ class Groups(Cog):
         if member.bot:
             return
 
+        # Don't message TAs, they probably clicked on accident.
+        ta_role = self.bot.get_ta_role(guild)
+        if ta_role in member.roles:
+            return
+
         # Only count reactions to the right message
         if payload.message_id != self.message_id:
             return
