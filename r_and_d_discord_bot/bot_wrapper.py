@@ -2,6 +2,7 @@ from datetime import datetime
 from discord import Guild, Member, Role, TextChannel
 from discord.ext.commands import Bot, Cog
 from typing import cast, Optional, Dict
+from r_and_d_discord_bot.cogs.groups import SelfPlacementMessageData
 import logging
 import pickle
 
@@ -101,12 +102,14 @@ class GuildData:
     ta_role: Optional[Role]
     student_roles: Dict[Member, Role]
     announcements_data: Optional[AnnouncementsData]
+    placement_message: Optional[SelfPlacementMessageData]
 
     def __init__(self, guild_data_bin: Optional[GuildDataBinary], guild: Guild):
         self.guild = guild
         self.ta_role = None
         self.student_roles = {}
         self.announcements_data = None
+        self.self_placement_message = None
 
         if guild_data_bin:
             ta_role = guild.get_role(guild_data_bin.ta_role)
