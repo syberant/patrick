@@ -1,8 +1,9 @@
 import discord
 from discord import TextChannel
-from discord.ext.commands import Bot, Context, CheckFailure, CommandError
+from discord.ext.commands import Context, CheckFailure, CommandError
 from r_and_d_discord_bot.bot_wrapper import BotWrapper
 from r_and_d_discord_bot.cogs import Development, Groups, StandardChannels
+import argparse
 import os
 import logging
 
@@ -14,9 +15,15 @@ class OnlyAdminCommands(CheckFailure):
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Discord bot that helps with the organisation of tutorials")
+    parser.add_argument("--data", type=str,
+                        default="server_data.pickle", help="file which stores server data")
+    args = parser.parse_args()
+
     intents = discord.Intents.default()
     intents.members = True
-    bot = BotWrapper("guilddata.pickle", command_prefix='>', intents=intents)
+    bot = BotWrapper(args.data, command_prefix='>', intents=intents)
 
     bot.add_cog(Development(bot))
     bot.add_cog(Groups(bot))
