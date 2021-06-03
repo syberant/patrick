@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from r_and_d_discord_bot.cogs.groups import SelfPlacementMessageData
 
+import atexit
 from discord import Guild, Member, Role
 from discord.ext.commands import Bot, Cog
 from r_and_d_discord_bot.cogs.groups import SelfPlacementMessageDataBinary
@@ -101,6 +102,13 @@ class GuildData:
         return self.student_roles.get(ta)
 
 
+def write_guild_data(bot: BotWrapper):
+    logging.info(f"Writing guild data to {bot.guild_data_filename}")
+    with open(bot.guild_data_filename, "wb") as f:
+        pickle.dump({guild_id: GuildDataBinary(data)
+                     for guild_id, data in bot.guild_data.items()}, f)
+
+
 class BotWrapper(Bot):
     # The file from which the guild data is read and to which it is written.
     guild_data_filename: str
@@ -111,11 +119,7 @@ class BotWrapper(Bot):
         self.guild_data = {}
         self.guild_data_filename = guild_data_filename
 
-    def __del__(self):
-        logging.info(f"Writing guild data to {self.guild_data_filename}")
-        with open(self.guild_data_filename, "wb") as f:
-            pickle.dump({guild_id: GuildDataBinary(data)
-                         for guild_id, data in self.guild_data.items()}, f)
+        atexit.register(write_guild_data, bot=self)
 
     @Cog.listener()
     async def on_ready(self):
