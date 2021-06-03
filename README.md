@@ -42,4 +42,4 @@ Take note however that you must first run `git add -A` if there are any new file
 - Sybrand
 
 ## License
-Coming soon...
+GNU General Public License v3 (GPLv3)
