@@ -3,12 +3,12 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from r_and_d_discord_bot.bot_wrapper import BotWrapper
+    from patrick.bot_wrapper import BotWrapper
 
 from discord import ClientUser, PermissionOverwrite, Role
 from typing import List, Dict, Union
 from discord.ext.commands import Cog, command, Context
-from r_and_d_discord_bot.helper_functions import create_text_channel
+from patrick.helper_functions import create_text_channel
 import logging
 
 logger = logging.getLogger(__name__)

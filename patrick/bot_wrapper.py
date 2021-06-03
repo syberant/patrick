@@ -3,13 +3,13 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from r_and_d_discord_bot.cogs.groups import SelfPlacementMessageData
+    from patrick.cogs.groups import SelfPlacementMessageData
 
 import atexit
 from discord import Guild, Member, Role
 from discord.ext.commands import Bot, Cog
-from r_and_d_discord_bot.cogs.groups import SelfPlacementMessageDataBinary
-from r_and_d_discord_bot.cogs.announcements import AnnouncementsData, AnnouncementsDataBinary
+from patrick.cogs.groups import SelfPlacementMessageDataBinary
+from patrick.cogs.announcements import AnnouncementsData, AnnouncementsDataBinary
 from typing import Optional, Dict
 import logging
 import pickle

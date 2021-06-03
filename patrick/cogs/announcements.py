@@ -4,7 +4,7 @@ from discord.ext import tasks
 from discord.ext.commands import Cog, Context, command
 from typing import Optional, cast
 import logging
-from r_and_d_discord_bot.helper_functions import (
+from patrick.helper_functions import (
     get_brightspace_announcements
 )
 
