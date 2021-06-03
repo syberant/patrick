@@ -5,9 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from patrick.bot_wrapper import BotWrapper
 
-import asyncio
 import logging
-import random
 import discord
 from discord.ext.commands import Cog, Context, command, has_permissions
 from discord import (
@@ -18,7 +16,6 @@ from discord import (
     PermissionOverwrite,
     CategoryChannel,
     TextChannel,
-    PartialEmoji,
 )
 from typing import Tuple, List, Dict
 from .self_placement import SelfPlacementMessageData, SelfPlacementMessageDataBinary
