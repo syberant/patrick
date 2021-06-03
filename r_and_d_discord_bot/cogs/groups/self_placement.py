@@ -28,7 +28,6 @@ EMOJIS = "🐶🐱🐭🐹🐰🦊🐻🐼🐻🐯🦁🐮🐷🐽🐸🐵🙈�
 
 
 class SelfPlacementMessageDataBinary:
-    # TODO: store PartialEmoji properly
     mapping: List[Tuple[PartialEmoji, int]]
     channel_id: int
     message_id: int
@@ -54,7 +53,7 @@ class SelfPlacementMessageDataBinary:
         emoji_ta_mapping = {e: r for (e, r) in unpacked_mapping}
         ta_emoji_mapping = {r: e for (e, r) in unpacked_mapping}
 
-        return SelfPlacementMessageData.from_raw_parts(emoji_ta_mapping, ta_emoji_mapping, message, guild, bot)
+        return SelfPlacementMessageData(emoji_ta_mapping, ta_emoji_mapping, message, guild, bot)
 
 
 class SelfPlacementMessageData:
@@ -64,8 +63,7 @@ class SelfPlacementMessageData:
     guild: Guild
     bot: BotWrapper
 
-    @classmethod
-    def from_raw_parts(
+    def __init__(
             self,
             emoji_ta_mapping: Dict[PartialEmoji, Role],
             ta_emoji_mapping: Dict[Role, PartialEmoji],
@@ -79,7 +77,7 @@ class SelfPlacementMessageData:
         self.guild = guild
         self.bot = bot
 
-    async def send_message(self, target_channel: TextChannel):
+    async def _send_message(self, target_channel: TextChannel):
         embed = self._placement_embed()
 
         self.message = await target_channel.send(embed=embed)
@@ -105,14 +103,17 @@ class SelfPlacementMessageData:
         self.ta_emoji_mapping = ta_emoji
         self.emoji_ta_mapping = emoji_ta
 
-    def __init__(self, guild: Guild, bot: BotWrapper):
-        """
-        NOTE: Message still needs to be sent but that's async so caller is
-        responsible for that. See `send_message()`.
-        """
-        self.guild = guild
-        self.bot = bot
-        self._choose_emoji()
+    @staticmethod
+    async def create(guild: Guild, bot: BotWrapper, target_channel: TextChannel) -> SelfPlacementMessageData:
+        cls = SelfPlacementMessageData(None, None, None, guild, bot)  # type: ignore
+
+        # Initialises emoji_ta_mapping and ta_emoji_mapping
+        cls._choose_emoji()
+
+        # Initialises message
+        await cls._send_message(target_channel)
+
+        return cls
 
     def _placement_embed(self) -> Embed:
         embed = Embed(

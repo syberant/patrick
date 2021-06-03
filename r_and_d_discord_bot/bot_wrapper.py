@@ -56,7 +56,6 @@ class GuildDataBinary:
         self.placement_message = None
         if guild_data.placement_message:
             self.placement_message = SelfPlacementMessageDataBinary(guild_data.placement_message)
-            #  print(f"Getting SelfPlacementMessageDataBinary: {self.placement_message}")
 
 
 class GuildData:
@@ -93,7 +92,6 @@ class GuildData:
 
             if guild_data_bin.placement_message:
                 self.placement_message = guild_data_bin.placement_message.to_data(guild, bot)
-                #  print(f"Getting SelfPlacementMessageData: {self.placement_message}")
 
     def get_ta_role(self, guild: Guild) -> Optional[Role]:
         return self.ta_role
