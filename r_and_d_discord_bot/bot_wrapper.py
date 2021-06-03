@@ -5,10 +5,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from r_and_d_discord_bot.cogs.groups import SelfPlacementMessageData
 
-from datetime import datetime
-from discord import Guild, Member, Role, TextChannel
+from discord import Guild, Member, Role
 from discord.ext.commands import Bot, Cog
-from typing import cast, Optional, Dict
+from r_and_d_discord_bot.cogs.groups import SelfPlacementMessageDataBinary
+from r_and_d_discord_bot.cogs.announcements import AnnouncementsData, AnnouncementsDataBinary
+from typing import Optional, Dict
 import logging
 import pickle
 
@@ -32,57 +33,6 @@ async def get_ta_students_role(guild: Guild, ta: Member) -> Role:
     return await guild.create_role(name=name)
 
 
-class AnnouncementsDataBinary:
-    url: str
-    d2l_session_val: str
-    d2l_secure_session_val: str
-    last_updated: Optional[datetime]
-    channel: int  # TextChannel.id
-
-    def __init__(self, announcements_data):  # announcements_data: AnnouncementsData
-        self.url = announcements_data.url
-        self.d2l_session_val = announcements_data.d2l_session_val
-        self.d2l_secure_session_val = announcements_data.d2l_secure_session_val
-        self.last_updated = announcements_data.last_updated
-        self.channel = announcements_data.channel.id
-
-
-class AnnouncementsData:
-    # URL of Announcements page
-    url: str
-    d2l_session_val: str
-    d2l_secure_session_val: str
-    # Last time announcements were fetched
-    last_updated: Optional[datetime]
-    # Announcements channel
-    channel: TextChannel
-
-    def __init__(
-            self,
-            url: str,
-            d2l_session_val: str,
-            d2l_secure_session_val: str,
-            last_updated: Optional[datetime],
-            channel: TextChannel
-    ):
-        self.url = url
-        self.d2l_session_val = d2l_session_val
-        self.d2l_secure_session_val = d2l_secure_session_val
-        self.last_updated = last_updated
-        self.channel = channel
-
-    @staticmethod
-    def from_bin(announcements_data_bin: AnnouncementsDataBinary, guild: Guild):
-        url = announcements_data_bin.url
-        d2l_session_val = announcements_data_bin.d2l_session_val
-        d2l_secure_session_val = announcements_data_bin.d2l_secure_session_val
-        last_updated = announcements_data_bin.last_updated
-        channel = guild.get_channel(announcements_data_bin.channel)
-        assert channel
-        channel = cast(TextChannel, channel)
-        return AnnouncementsData(url, d2l_session_val, d2l_secure_session_val, last_updated, channel)
-
-
 class GuildDataBinary:
     """
     A class that stores a serialisable copy of GuildData.
@@ -91,6 +41,7 @@ class GuildDataBinary:
     ta_role: int  # Role.id
     student_roles: Dict[int, int]  # Dict[Member.id, Role.id]
     announcements_data: Optional[AnnouncementsDataBinary]
+    placement_message: Optional[SelfPlacementMessageDataBinary]
 
     def __init__(self, guild_data):
         self.ta_role = guild_data.ta_role.id
@@ -101,6 +52,10 @@ class GuildDataBinary:
         self.announcements_data = None
         if guild_data.announcements_data:
             self.announcements_data = AnnouncementsDataBinary(guild_data.announcements_data)
+        self.placement_message = None
+        if guild_data.placement_message:
+            self.placement_message = SelfPlacementMessageDataBinary(guild_data.placement_message)
+            #  print(f"Getting SelfPlacementMessageDataBinary: {self.placement_message}")
 
 
 class GuildData:
@@ -110,12 +65,12 @@ class GuildData:
     announcements_data: Optional[AnnouncementsData]
     placement_message: Optional[SelfPlacementMessageData]
 
-    def __init__(self, guild_data_bin: Optional[GuildDataBinary], guild: Guild):
+    def __init__(self, guild_data_bin: Optional[GuildDataBinary], guild: Guild, bot: BotWrapper):
         self.guild = guild
         self.ta_role = None
         self.student_roles = {}
         self.announcements_data = None
-        self.self_placement_message = None
+        self.placement_message = None
 
         if guild_data_bin:
             ta_role = guild.get_role(guild_data_bin.ta_role)
@@ -134,6 +89,10 @@ class GuildData:
 
             if guild_data_bin.announcements_data:
                 self.announcements_data = AnnouncementsData.from_bin(guild_data_bin.announcements_data, guild)
+
+            if guild_data_bin.placement_message:
+                self.placement_message = guild_data_bin.placement_message.to_data(guild, bot)
+                #  print(f"Getting SelfPlacementMessageData: {self.placement_message}")
 
     def get_ta_role(self, guild: Guild) -> Optional[Role]:
         return self.ta_role
@@ -165,7 +124,7 @@ class BotWrapper(Bot):
             with open(self.guild_data_filename, "rb") as f:
                 guild_data_bin = pickle.load(f)
                 self.guild_data = {
-                    guild.id: GuildData(guild_data_bin.get(guild.id), guild)
+                    guild.id: GuildData(guild_data_bin.get(guild.id), guild, self)
                     for guild in self.guilds
                 }
         except FileNotFoundError:
@@ -173,7 +132,7 @@ class BotWrapper(Bot):
                 f"Guild data file {self.guild_data_filename} does not exist;" +
                 " creating it when saving the guild data instead.")
             self.guild_data = {
-                guild.id: GuildData(None, guild) for guild in self.guilds
+                guild.id: GuildData(None, guild, self) for guild in self.guilds
             }
 
         # Update guild data if necessary.

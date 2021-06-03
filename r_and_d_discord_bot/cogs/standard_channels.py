@@ -1,7 +1,13 @@
+# Protect against cyclic import for type annotations
+# https://adamj.eu/tech/2021/05/13/python-type-hints-how-to-fix-circular-imports/
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from r_and_d_discord_bot.bot_wrapper import BotWrapper
+
 from discord import ClientUser, PermissionOverwrite, Role
 from typing import List, Dict, Union
 from discord.ext.commands import Cog, command, Context
-from r_and_d_discord_bot.bot_wrapper import BotWrapper
 from r_and_d_discord_bot.helper_functions import create_text_channel
 import logging
 

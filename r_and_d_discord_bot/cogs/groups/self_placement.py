@@ -16,8 +16,9 @@ from discord import (
     TextChannel,
     PartialEmoji,
     Message,
+    PartialMessage,
 )
-from typing import Dict
+from typing import Dict, List, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
@@ -26,12 +27,57 @@ logger = logging.getLogger(__name__)
 EMOJIS = "🐶🐱🐭🐹🐰🦊🐻🐼🐻🐯🦁🐮🐷🐽🐸🐵🙈🙉🙊🐒🐔🐧🐦🐤🐣🐥🦆🦅🦉🦇🐺🐗🐴🦄🐝🪱🐛🦋🐌🐞🐜🪰🪲🪳🦟🦗🕷🕸🦂🐢🐍🦎🦖🦕🐙🦑🦐🦞🦀🐡🐠🐟🐬🐳🐋🦈🐊🐅🐆🦓🦍🦧🦣🐘🦛🦏🐪🐫🦒🦘🦬🐃🐂🐄🐎🐖🐏🐑🦙🐐🦌🐕🐩🦮🐕🦺🐈🪶🐓🦃🦤🦚🦜🦢🦩🕊🐇🦝🦨🦡🦫🦦🦥🐁🐀🐿🦔🐾🐉🐲🌵🎄🌲🌳🌴🪵🌱🌿🎍🪴🎋🍃🍂🍁🍄🐚🪨🌾💐🌷🌹🥀🌺🌸🌼🌻🌞🌝🌛🌜🌚🌕🌖🌗🌘🌑🌒🌓🌔🌙🌎🌍🌏🪐💫🌟✨🔥🌪🌈🌫🍏🍎🍐🍊🍋🍌🍉🍇🍓🫐🍈🍒🍑🥭🍍🥥🥝🍅🍆🥑🥦🥬🥒🌶🫑🌽🥕🫒🧄🧅🥔🍠🥐🥯🍞🥖🥨🧀🥚🍳🧈🥞🧇🥓🥩🍗🍖🦴🌭🍔🍟🍕🫓🥪🥙🧆🌮🌯🫔🥗🥘🫕🥫🍝🍜🍲🍛🍣🍱🥟🦪🍤🍙🍚🍘🍥🥠🥮🍢🍡🍧🍨🍦🥧🧁🍰🎂🍮🍭🍬🍫🍿🍩🍪🌰🥜🍯🥛🍼🫖🍵🧃🥤🧋🍶🍺🍻🥂🍷🥃🍸🍹🧉🍾🧊🥄🍴🍽🥣🥡🥢🧂🏀🏈🥎🎾🏐🏉🥏🎱🪀🏓🏸🏒🏑🥍🏏🪃🥅🏹🎣🤿🥊🥋🎽🛹🛼🛷⛸🥌🎿⛷🏂🪂🏆🥇🥈🥉🏅🎖🏵🎗🎫🎟🎪🎭🩰🎨🎬🎤🎧🎼🎹🥁🪘🎷🎺🪗🎸🪕🎻🎲♟🎯🎳🎮🎰🧩🚗🚕🚙🚌🚎🏎🚓🚑🚒🚐🛻🚚🚛🚜🦯🦽🦼🛴🚲🛵🏍🛺🚨🚔🚍🚘🚖🚡🚠🚟🚃🚋🚞🚝🚄🚅🚈🚂🚆🚇🚊🚉🛬🛩💺🛰🚀🛸🚁🛶🚤🛥🛳⛴🚢🪝🚧🚦🚥🚏🗺🗿🗽🗼🏰🏯🏟🎡🎢🎠⛱🏖🏝🏜🌋⛰🏔🗻🏕🛖🏠🏡🏘🏚🏗🏭🏢🏬🏣🏤🏥🏦🏨🏪🏫🏩💒🏛🕌🕍🛕🕋⛩🛤🛣🗾🎑🏞🌅🌄🌠🎇🎆🌇🌆🏙🌃🌌🌉🌁"  # noqa: E501
 
 
+class SelfPlacementMessageDataBinary:
+    # TODO: store PartialEmoji properly
+    mapping: List[Tuple[PartialEmoji, int]]
+    channel_id: int
+    message_id: int
+
+    def __init__(self, data):  # data: SelfPlacementMessageData
+        channel = data.message.channel
+        self.channel_id = channel.id
+        self.message_id = data.message.id
+
+        self.mapping = [(e, role.id) for e, role in data.emoji_ta_mapping.items()]
+
+    def to_data(self, guild: Guild, bot: BotWrapper) -> SelfPlacementMessageData:
+        channel = guild.get_channel(self.channel_id)
+        assert isinstance(channel, TextChannel)
+        message = channel.get_partial_message(self.message_id)
+
+        def unpack_mapping(e, r):
+            role = guild.get_role(r)
+            assert role
+            return (e, role)
+
+        unpacked_mapping = [unpack_mapping(e, r) for (e, r) in self.mapping]
+        emoji_ta_mapping = {e: r for (e, r) in unpacked_mapping}
+        ta_emoji_mapping = {r: e for (e, r) in unpacked_mapping}
+
+        return SelfPlacementMessageData.from_raw_parts(emoji_ta_mapping, ta_emoji_mapping, message, guild, bot)
+
+
 class SelfPlacementMessageData:
     emoji_ta_mapping: Dict[PartialEmoji, Role]
     ta_emoji_mapping: Dict[Role, PartialEmoji]
-    message: Message
+    message: Union[Message, PartialMessage]
     guild: Guild
     bot: BotWrapper
+
+    @classmethod
+    def from_raw_parts(
+            self,
+            emoji_ta_mapping: Dict[PartialEmoji, Role],
+            ta_emoji_mapping: Dict[Role, PartialEmoji],
+            message: Union[Message, PartialMessage],
+            guild: Guild,
+            bot: BotWrapper,
+            ):
+        self.emoji_ta_mapping = emoji_ta_mapping
+        self.ta_emoji_mapping = ta_emoji_mapping
+        self.message = message
+        self.guild = guild
+        self.bot = bot
 
     async def send_message(self, target_channel: TextChannel):
         embed = self._placement_embed()
