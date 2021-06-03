@@ -95,7 +95,7 @@ class Announcements(Cog):
             channel
         )
 
-    @tasks.loop(seconds=60)
+    @tasks.loop(minutes=5)
     async def brightspace_announcements(self):
         logger.info("Sending announcements")
         for guild in self.bot.guilds:

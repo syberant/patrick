@@ -2,7 +2,7 @@ import discord
 from discord import TextChannel
 from discord.ext.commands import Context, CheckFailure, CommandError
 from r_and_d_discord_bot.bot_wrapper import BotWrapper
-from r_and_d_discord_bot.cogs import Development, Groups, StandardChannels, Announcements
+from r_and_d_discord_bot.cogs import Groups, StandardChannels, Announcements
 import argparse
 import os
 import logging
@@ -19,13 +19,19 @@ def main():
         description="Discord bot that helps with the organisation of tutorials")
     parser.add_argument("--data", type=str,
                         default="server_data.pickle", help="file which stores server data")
+    parser.add_argument("--log-level", type=str, default="INFO",
+                        help="log level, one of DEBUG, INFO, WARNING, ERROR, CRITICAL")
     args = parser.parse_args()
+
+    log_level = getattr(logging, args.log_level.upper(), None)
+    if not isinstance(log_level, int):
+        raise ValueError(f"Invalid log level: {args.log_level}")
+    logging.basicConfig(level=log_level)
 
     intents = discord.Intents.default()
     intents.members = True
     bot = BotWrapper(args.data, command_prefix='>', intents=intents)
 
-    bot.add_cog(Development(bot))
     bot.add_cog(Groups(bot))
     bot.add_cog(StandardChannels(bot))
     bot.add_cog(Announcements(bot))
