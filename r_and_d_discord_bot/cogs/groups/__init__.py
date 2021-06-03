@@ -217,8 +217,9 @@ class Groups(Cog):
         if not guild:
             return
 
-        self.bot.guild_data[guild.id].placement_message = data = SelfPlacementMessageData(guild, self.bot)
-        await data.send_message(target_channel)
+        self.bot.guild_data[guild.id].placement_message = await SelfPlacementMessageData.create(
+            guild, self.bot, target_channel
+        )
 
     @Cog.listener()
     async def on_raw_reaction_add(
