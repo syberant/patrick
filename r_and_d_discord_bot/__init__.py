@@ -19,7 +19,14 @@ def main():
         description="Discord bot that helps with the organisation of tutorials")
     parser.add_argument("--data", type=str,
                         default="server_data.pickle", help="file which stores server data")
+    parser.add_argument("--log-level", type=str, default="INFO",
+                        help="log level, one of DEBUG, INFO, WARNING, ERROR, CRITICAL")
     args = parser.parse_args()
+
+    log_level = getattr(logging, args.log_level.upper(), None)
+    if not isinstance(log_level, int):
+        raise ValueError(f"Invalid log level: {args.log_level}")
+    logging.basicConfig(level=log_level)
 
     intents = discord.Intents.default()
     intents.members = True
