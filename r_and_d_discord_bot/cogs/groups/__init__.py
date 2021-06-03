@@ -14,6 +14,7 @@ from discord import (
     PartialEmoji,
 )
 from typing import Tuple, List, Dict
+from .self_placement import SelfPlacementMessageData
 from r_and_d_discord_bot.bot_wrapper import BotWrapper
 from r_and_d_discord_bot.helper_functions import (
     create_text_channel,
@@ -42,80 +43,6 @@ def is_unplaced_student(m: Member, ta_role: Role):
             return False
 
     return True
-
-
-class SelfPlacementMessageData:
-    emoji_ta_mapping: Dict[PartialEmoji, Role]
-    ta_emoji_mapping: Dict[Role, PartialEmoji]
-    message_id: int
-
-    async def _send_message(self, embed: Embed, target_channel: TextChannel):
-        message = await target_channel.send(embed=embed)
-        try:
-            futures = [message.add_reaction(e) for e in self.emoji_ta_mapping.keys()]
-            # Execute concurrently
-            await asyncio.gather(*futures)
-        except discord.HTTPException:
-            logger.warning("Error trying to use emoji", exc_info=True)
-        self.message_id = message.id
-
-    def _choose_emoji(self, guild: Guild, bot: BotWrapper):
-        ta_role = bot.get_ta_role(guild)
-
-        shuffled = random.sample(EMOJIS, len(ta_role.members))
-        chosen_emoji = [PartialEmoji(name=e) for e in shuffled]  # type: ignore
-
-        ta_emoji = {}
-        emoji_ta = {}
-        for (ta, emoji) in zip(ta_role.members, chosen_emoji):
-            role = bot.get_student_role(guild, ta)
-            emoji_ta[emoji] = role
-            ta_emoji[role] = emoji
-        self.ta_emoji_mapping = ta_emoji
-        self.emoji_ta_mapping = emoji_ta
-
-    def __init__(self, guild: Guild, target_channel: TextChannel, bot: BotWrapper):
-        self._choose_emoji(guild, bot)
-
-        embed = self.placement_embed(guild.id, bot)
-        asyncio.run(self._send_message(embed, target_channel))
-
-    def placement_embed(self, guild_id: int, bot: BotWrapper) -> Embed:
-        embed = Embed(
-            title="Student roles",
-            description="Use the emojis below to place yourself with a TA. \
-                         Please spread evenly over the TAs.",
-        )
-
-        guild = bot.get_guild(guild_id)
-        assert guild
-        ta_role = bot.get_ta_role(guild)
-        for ta in ta_role.members:
-            name = ta.nick or ta.name
-            role = bot.get_student_role(guild, ta)
-            embed.add_field(
-                name=name,
-                value=f"{self.ta_emoji_mapping[role]} Currently {len(role.members)} \
-                        student(s).",
-            )
-
-        return embed
-
-    async def update_placement_message(
-        self,
-        channel,
-        message_id: int,
-        guild_id: int,
-        bot: BotWrapper,
-    ):
-        embed = self.placement_embed(guild_id, bot)
-        # TODO: Get channel myself
-        message = await channel.fetch_message(message_id)
-        await message.edit(embed=embed)
-
-
-# Some of these are broken: ❄️🐨☘️🍀☄️💥☀️🌤⛅️🌥☁️🌦🌧⛈🌩🌨❄️☃️🌬💨💧💦☂️🌊⛳️🪁✈️🛫
-EMOJIS = "🐶🐱🐭🐹🐰🦊🐻🐼🐻🐯🦁🐮🐷🐽🐸🐵🙈🙉🙊🐒🐔🐧🐦🐤🐣🐥🦆🦅🦉🦇🐺🐗🐴🦄🐝🪱🐛🦋🐌🐞🐜🪰🪲🪳🦟🦗🕷🕸🦂🐢🐍🦎🦖🦕🐙🦑🦐🦞🦀🐡🐠🐟🐬🐳🐋🦈🐊🐅🐆🦓🦍🦧🦣🐘🦛🦏🐪🐫🦒🦘🦬🐃🐂🐄🐎🐖🐏🐑🦙🐐🦌🐕🐩🦮🐕🦺🐈🪶🐓🦃🦤🦚🦜🦢🦩🕊🐇🦝🦨🦡🦫🦦🦥🐁🐀🐿🦔🐾🐉🐲🌵🎄🌲🌳🌴🪵🌱🌿🎍🪴🎋🍃🍂🍁🍄🐚🪨🌾💐🌷🌹🥀🌺🌸🌼🌻🌞🌝🌛🌜🌚🌕🌖🌗🌘🌑🌒🌓🌔🌙🌎🌍🌏🪐💫🌟✨🔥🌪🌈🌫🍏🍎🍐🍊🍋🍌🍉🍇🍓🫐🍈🍒🍑🥭🍍🥥🥝🍅🍆🥑🥦🥬🥒🌶🫑🌽🥕🫒🧄🧅🥔🍠🥐🥯🍞🥖🥨🧀🥚🍳🧈🥞🧇🥓🥩🍗🍖🦴🌭🍔🍟🍕🫓🥪🥙🧆🌮🌯🫔🥗🥘🫕🥫🍝🍜🍲🍛🍣🍱🥟🦪🍤🍙🍚🍘🍥🥠🥮🍢🍡🍧🍨🍦🥧🧁🍰🎂🍮🍭🍬🍫🍿🍩🍪🌰🥜🍯🥛🍼🫖🍵🧃🥤🧋🍶🍺🍻🥂🍷🥃🍸🍹🧉🍾🧊🥄🍴🍽🥣🥡🥢🧂🏀🏈🥎🎾🏐🏉🥏🎱🪀🏓🏸🏒🏑🥍🏏🪃🥅🏹🎣🤿🥊🥋🎽🛹🛼🛷⛸🥌🎿⛷🏂🪂🏆🥇🥈🥉🏅🎖🏵🎗🎫🎟🎪🎭🩰🎨🎬🎤🎧🎼🎹🥁🪘🎷🎺🪗🎸🪕🎻🎲♟🎯🎳🎮🎰🧩🚗🚕🚙🚌🚎🏎🚓🚑🚒🚐🛻🚚🚛🚜🦯🦽🦼🛴🚲🛵🏍🛺🚨🚔🚍🚘🚖🚡🚠🚟🚃🚋🚞🚝🚄🚅🚈🚂🚆🚇🚊🚉🛬🛩💺🛰🚀🛸🚁🛶🚤🛥🛳⛴🚢🪝🚧🚦🚥🚏🗺🗿🗽🗼🏰🏯🏟🎡🎢🎠⛱🏖🏝🏜🌋⛰🏔🗻🏕🛖🏠🏡🏘🏚🏗🏭🏢🏬🏣🏤🏥🏦🏨🏪🏫🏩💒🏛🕌🕍🛕🕋⛩🛤🛣🗾🎑🏞🌅🌄🌠🎇🎆🌇🌆🏙🌃🌌🌉🌁"  # noqa: E501
 
 
 class Groups(Cog):
@@ -284,8 +211,8 @@ class Groups(Cog):
         if not guild:
             return
 
-        guild_data = self.bot.guild_data[guild.id]
-        guild_data.placement_message = SelfPlacementMessageData(guild, target_channel, self.bot)
+        self.bot.guild_data[guild.id].placement_message = data = SelfPlacementMessageData(guild, self.bot)
+        await data.send_message(guild, self.bot, target_channel)
 
     @Cog.listener()
     async def on_raw_reaction_add(
@@ -329,7 +256,7 @@ class Groups(Cog):
             await data.update_placement_message(
                 channel,
                 payload.message_id,
-                payload.guild_id,
+                guild,
                 self.bot
             )
         else:
@@ -382,6 +309,6 @@ class Groups(Cog):
             await data.update_placement_message(
                 channel,
                 payload.message_id,
-                payload.guild_id,
+                guild,
                 self.bot
             )
