@@ -152,8 +152,7 @@ class Groups(Cog):
 
         embed = Embed(
             title="Confirm placement?",
-            description="This would be the distribution \
-                    of new students over the TAs:",
+            description="This would be the distribution of new students over the TAs:",
         )
         for r, stud in distribution.items():
             embed.add_field(
@@ -294,8 +293,7 @@ class Groups(Cog):
         if role:
             await member.remove_roles(role)
             await member.send(
-                f"Reaction removed in server '{guild.name}', \
-                  removing you from '{role.name}'"
+                f"Reaction removed in server '{guild.name}', removing you from '{role.name}'"
             )
 
             # Update placement embed

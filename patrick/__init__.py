@@ -50,8 +50,8 @@ def main():
         from discord.ext.commands import CommandNotFound, CommandInvokeError, UserInputError, CheckFailure
 
         if isinstance(error, UserInputError):
-            await ctx.send(f"400 Bad Request: Some part of your input was incorrect, either too few arguments, \
-                           too many arguments or invalid arguments. Have a look at `>help {ctx.invoked_with}`")
+            await ctx.send("400 Bad Request: Some part of your input was incorrect, either too few arguments, " +
+                           f"too many arguments or invalid arguments. Have a look at `>help {ctx.invoked_with}`")
             return
 
         if isinstance(error, CommandNotFound):
@@ -65,16 +65,16 @@ def main():
                 else:
                     await ctx.send("This channel cannot be used for commands, as it is not part of a server.")
             else:
-                await ctx.send("403 Forbidden: You are for some reason (probably a good one) not permitted \
-                               to execute this command.")
+                await ctx.send("403 Forbidden: You are for some reason (probably a good one) not permitted " +
+                               "to execute this command.")
             return
 
         # Getting to more serious errors, log them.
         logger.error(f"Some error occured while executing command `{ctx.message.content}`", exc_info=error)
 
         if isinstance(error, CommandInvokeError):
-            await ctx.send("500 Internal Server Error: Uh oh, something went wrong on our side \
-                           while processing that command.")
+            await ctx.send("500 Internal Server Error: Uh oh, something went wrong on our side " +
+                           "while processing that command.")
         else:
             await ctx.send("An unknown error occured. Ask the server admin to have a look at the logs.")
 
