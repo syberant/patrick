@@ -15,6 +15,7 @@ from discord import (
     Role,
     TextChannel,
     PartialEmoji,
+    Message,
 )
 from typing import Dict
 
@@ -28,22 +29,23 @@ EMOJIS = "🐶🐱🐭🐹🐰🦊🐻🐼🐻🐯🦁🐮🐷🐽🐸🐵🙈�
 class SelfPlacementMessageData:
     emoji_ta_mapping: Dict[PartialEmoji, Role]
     ta_emoji_mapping: Dict[Role, PartialEmoji]
-    message_id: int
+    message: Message
+    guild: Guild
+    bot: BotWrapper
 
-    async def send_message(self, guild: Guild, bot: BotWrapper, target_channel: TextChannel):
-        embed = self._placement_embed(guild, bot)
+    async def send_message(self, target_channel: TextChannel):
+        embed = self._placement_embed()
 
-        message = await target_channel.send(embed=embed)
-        self.message_id = message.id
+        self.message = await target_channel.send(embed=embed)
         try:
-            futures = [message.add_reaction(e) for e in self.emoji_ta_mapping.keys()]
+            futures = [self.message.add_reaction(e) for e in self.emoji_ta_mapping.keys()]
             # Execute concurrently
             await asyncio.gather(*futures)
         except discord.HTTPException:
             logger.warning("Error trying to use emoji", exc_info=True)
 
-    def _choose_emoji(self, guild: Guild, bot: BotWrapper):
-        ta_role = bot.get_ta_role(guild)
+    def _choose_emoji(self):
+        ta_role = self.bot.get_ta_role(self.guild)
 
         shuffled = random.sample(EMOJIS, len(ta_role.members))
         chosen_emoji = [PartialEmoji(name=e) for e in shuffled]  # type: ignore
@@ -51,28 +53,32 @@ class SelfPlacementMessageData:
         ta_emoji = {}
         emoji_ta = {}
         for (ta, emoji) in zip(ta_role.members, chosen_emoji):
-            role = bot.get_student_role(guild, ta)
+            role = self.bot.get_student_role(self.guild, ta)
             emoji_ta[emoji] = role
             ta_emoji[role] = emoji
         self.ta_emoji_mapping = ta_emoji
         self.emoji_ta_mapping = emoji_ta
 
     def __init__(self, guild: Guild, bot: BotWrapper):
-        self._choose_emoji(guild, bot)
-        # NOTE: Message still needs to be sent but that's async so caller is
-        # responsible for that
+        """
+        NOTE: Message still needs to be sent but that's async so caller is
+        responsible for that. See `send_message()`.
+        """
+        self.guild = guild
+        self.bot = bot
+        self._choose_emoji()
 
-    def _placement_embed(self, guild: Guild, bot: BotWrapper) -> Embed:
+    def _placement_embed(self) -> Embed:
         embed = Embed(
             title="Student roles",
             description="Use the emojis below to place yourself with a TA. \
                          Please spread evenly over the TAs.",
         )
 
-        ta_role = bot.get_ta_role(guild)
+        ta_role = self.bot.get_ta_role(self.guild)
         for ta in ta_role.members:
             name = ta.nick or ta.name
-            role = bot.get_student_role(guild, ta)
+            role = self.bot.get_student_role(self.guild, ta)
             embed.add_field(
                 name=name,
                 value=f"{self.ta_emoji_mapping[role]} Currently {len(role.members)} \
@@ -81,14 +87,6 @@ class SelfPlacementMessageData:
 
         return embed
 
-    async def update_placement_message(
-        self,
-        channel,
-        message_id: int,
-        guild: Guild,
-        bot: BotWrapper,
-    ):
-        embed = self._placement_embed(guild, bot)
-        # TODO: Get channel myself
-        message = await channel.fetch_message(message_id)
-        await message.edit(embed=embed)
+    async def update_placement_message(self):
+        embed = self._placement_embed()
+        await self.message.edit(embed=embed)

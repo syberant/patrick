@@ -212,7 +212,7 @@ class Groups(Cog):
             return
 
         self.bot.guild_data[guild.id].placement_message = data = SelfPlacementMessageData(guild, self.bot)
-        await data.send_message(guild, self.bot, target_channel)
+        await data.send_message(target_channel)
 
     @Cog.listener()
     async def on_raw_reaction_add(
@@ -227,7 +227,7 @@ class Groups(Cog):
             return
 
         # Only count reactions to the right message
-        if payload.message_id != data.message_id:
+        if payload.message_id != data.message.id:
             return
 
         guild = self.bot.get_guild(payload.guild_id)
@@ -237,9 +237,6 @@ class Groups(Cog):
         # Disallow enrolling with multiple TAs
         if not is_unplaced_student(payload.member, ta_role):
             return
-
-        channel = await self.bot.fetch_channel(payload.channel_id)
-        assert isinstance(channel, TextChannel)
 
         role = data.emoji_ta_mapping.get(payload.emoji)
 
@@ -253,16 +250,10 @@ class Groups(Cog):
             )
 
             # Update placement embed
-            await data.update_placement_message(
-                channel,
-                payload.message_id,
-                guild,
-                self.bot
-            )
+            await data.update_placement_message()
         else:
             # Emoji does not correspond to a TA, removing to avoid confusion
-            message = await channel.fetch_message(payload.message_id)
-            await message.clear_reaction(payload.emoji)
+            await data.message.clear_reaction(payload.emoji)
 
     @Cog.listener()
     async def on_raw_reaction_remove(
@@ -291,10 +282,8 @@ class Groups(Cog):
             return
 
         # Only count reactions to the right message
-        if payload.message_id != data.message_id:
+        if payload.message_id != data.message.id:
             return
-
-        channel = await self.bot.fetch_channel(payload.channel_id)
 
         role = data.emoji_ta_mapping.get(payload.emoji)
 
@@ -306,9 +295,4 @@ class Groups(Cog):
             )
 
             # Update placement embed
-            await data.update_placement_message(
-                channel,
-                payload.message_id,
-                guild,
-                self.bot
-            )
+            await data.update_placement_message()
