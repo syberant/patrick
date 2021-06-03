@@ -1,7 +1,7 @@
 { lib, python3Packages }:
 
 python3Packages.buildPythonApplication {
-  pname = "r-and-d-discord-bot";
+  pname = "patrick";
   version = "0.0.0";
 
   doCheck = false;
@@ -16,7 +16,7 @@ python3Packages.buildPythonApplication {
   ];
 
   meta = with lib; {
-    homepage = "https://github.com/syberant/r-and-d-discord-bot";
+    homepage = "https://github.com/syberant/patrick";
     description = "R&D Project 2020-2021, Discord bot assisting in seminars";
     license = licenses.gpl3;
     maintainers = with maintainers; [ syberant ];

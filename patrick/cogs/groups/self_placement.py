@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from r_and_d_discord_bot.bot_wrapper import BotWrapper
+    from patrick.bot_wrapper import BotWrapper
 
 import asyncio
 import logging

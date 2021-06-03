@@ -1,8 +1,8 @@
 import discord
 from discord import TextChannel
 from discord.ext.commands import Context, CheckFailure, CommandError
-from r_and_d_discord_bot.bot_wrapper import BotWrapper
-from r_and_d_discord_bot.cogs import Groups, StandardChannels, Announcements
+from patrick.bot_wrapper import BotWrapper
+from patrick.cogs import Groups, StandardChannels, Announcements
 import argparse
 import os
 import logging

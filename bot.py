@@ -1,5 +1,5 @@
 #!/usr/bin/env python
 
-from r_and_d_discord_bot import main
+from patrick import main
 
 main()

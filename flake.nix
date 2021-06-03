@@ -18,18 +18,18 @@
           pkgs.python3Packages.override { overrides = packageOverrides; };
         python = pythonPackages.python.override { inherit packageOverrides; };
 
-        r-and-d-discord-bot = pkgs.callPackage ./r-and-d-discord-bot.nix {
+        patrick = pkgs.callPackage ./patrick.nix {
           python3Packages = pythonPackages;
         };
       in rec {
-        defaultPackage = r-and-d-discord-bot;
-        packages.r-and-d-discord-bot = r-and-d-discord-bot;
+        defaultPackage = patrick;
+        packages.patrick = patrick;
 
         defaultApp = {
           type = "app";
-          program = "${r-and-d-discord-bot}/bin/r_and_d_discord_bot";
+          program = "${patrick}/bin/patrick";
         };
-        apps.r-and-d-discord-bot = defaultApp;
+        apps.patrick = defaultApp;
 
         devShell = pkgs.mkShell {
           buildInputs = (defaultPackage.propagatedBuildInputs or [ ])
@@ -44,14 +44,14 @@
           lint = {
             type = "app";
             program = "" + pkgs.writeScript "lint" ''
-              ${pythonPackages.flake8}/bin/flake8 ./r_and_d_discord_bot
+              ${pythonPackages.flake8}/bin/flake8 ./patrick
             '';
           };
 
           test = {
             type = "app";
             program = "" + pkgs.writeScript "test" ''
-              ${pythonPackages.mypy}/bin/mypy --namespace-packages ./r_and_d_discord_bot --python-executable ${
+              ${pythonPackages.mypy}/bin/mypy --namespace-packages ./patrick --python-executable ${
                 python.withPackages (ps: with ps; [ discord-stubs ])
               }/bin/python3
             '';
