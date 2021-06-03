@@ -1,3 +1,10 @@
+# Protect against cyclic import for type annotations
+# https://adamj.eu/tech/2021/05/13/python-type-hints-how-to-fix-circular-imports/
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from r_and_d_discord_bot.bot_wrapper import BotWrapper
+
 import asyncio
 import logging
 import random
@@ -14,8 +21,7 @@ from discord import (
     PartialEmoji,
 )
 from typing import Tuple, List, Dict
-from .self_placement import SelfPlacementMessageData
-from r_and_d_discord_bot.bot_wrapper import BotWrapper
+from .self_placement import SelfPlacementMessageData, SelfPlacementMessageDataBinary
 from r_and_d_discord_bot.helper_functions import (
     create_text_channel,
     create_voice_channel,
