@@ -18,7 +18,7 @@ python3Packages.buildPythonApplication {
   meta = with lib; {
     homepage = "https://github.com/syberant/r-and-d-discord-bot";
     description = "R&D Project 2020-2021, Discord bot assisting in seminars";
-    # license = licenses.TODO
+    license = licenses.gpl3;
     maintainers = with maintainers; [ syberant ];
   };
 }
