@@ -167,7 +167,7 @@ class BotWrapper(Bot):
         # Became TA
         if ta_role not in before.roles and ta_role in after.roles:
             role = await get_ta_students_role(guild, after)
-            guild_data.student_roles[after.id] = role.id
+            guild_data.student_roles[after] = role
 
         # Exit if no TA
         if ta_role not in after.roles:
