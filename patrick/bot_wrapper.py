@@ -93,9 +93,6 @@ class GuildData:
             if guild_data_bin.placement_message:
                 self.placement_message = guild_data_bin.placement_message.to_data(guild, bot)
 
-    def get_student_role(self, guild: Guild, ta: Member) -> Optional[Role]:
-        return self.student_roles.get(ta)
-
 
 def write_guild_data(bot: BotWrapper):
     logging.info(f"Writing guild data to {bot.guild_data_filename}")
