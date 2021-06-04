@@ -93,9 +93,6 @@ class GuildData:
             if guild_data_bin.placement_message:
                 self.placement_message = guild_data_bin.placement_message.to_data(guild, bot)
 
-    def get_ta_role(self, guild: Guild) -> Optional[Role]:
-        return self.ta_role
-
     def get_student_role(self, guild: Guild, ta: Member) -> Optional[Role]:
         return self.student_roles.get(ta)
 
@@ -169,7 +166,7 @@ class BotWrapper(Bot):
     async def on_member_update(self, before, after):
         guild = after.guild
         guild_data = self.guild_data[guild.id]
-        ta_role = guild_data.get_ta_role(guild)
+        ta_role = guild_data.ta_role
 
         # Became TA
         if ta_role not in before.roles and ta_role in after.roles:
@@ -194,7 +191,7 @@ class BotWrapper(Bot):
         NOTE: This method should be used after the on_ready event has
         happened.
         """
-        ta_role = self.guild_data[guild.id].get_ta_role(guild)
+        ta_role = self.guild_data[guild.id].ta_role
         assert ta_role
         return ta_role
 
