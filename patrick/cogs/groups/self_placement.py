@@ -118,8 +118,7 @@ class SelfPlacementMessageData:
     def _placement_embed(self) -> Embed:
         embed = Embed(
             title="Student roles",
-            description="Use the emojis below to place yourself with a TA. \
-                         Please spread evenly over the TAs.",
+            description="Use the emojis below to place yourself with a TA. Please spread evenly over the TAs.",
         )
 
         ta_role = self.bot.get_ta_role(self.guild)
@@ -128,8 +127,7 @@ class SelfPlacementMessageData:
             role = self.bot.get_student_role(self.guild, ta)
             embed.add_field(
                 name=name,
-                value=f"{self.ta_emoji_mapping[role]} Currently {len(role.members)} \
-                        student(s).",
+                value=f"{self.ta_emoji_mapping[role]} Currently {len(role.members)} student(s).",
             )
 
         return embed
