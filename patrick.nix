@@ -2,7 +2,7 @@
 
 python3Packages.buildPythonApplication {
   pname = "patrick";
-  version = "0.0.0";
+  version = "1.0.0";
 
   doCheck = false;
 
